@@ -1,0 +1,11 @@
+services:
+  bottiback:
+    image: bonda23/autotecnicabottiback:v0.0.1
+    build: .
+    ports:
+      - "4123:4123"
+    environment:
+      NODE_ENV: production
+    volumes:
+      - .:/app
+    restart: always

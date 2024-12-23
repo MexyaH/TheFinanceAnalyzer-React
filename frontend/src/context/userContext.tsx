@@ -16,7 +16,7 @@ const UserContext = createContext<UserContextType>({
   actualSurname: '',
   actualRole: 0,
   Userid: 0,
-  setUserData: (_name: string, _surname: string, _role: number, Userid:number ) => {},
+  setUserData: (_name: string, _surname: string, _role: number, _Userid:number ) => {},
   updateNameAndSurname: (_newName: string, _newSurname: string) => {},
   updateRole: (_newRole: number) => {}, // Add this line
   updateId: (_newId: number) => {}, // Add this line

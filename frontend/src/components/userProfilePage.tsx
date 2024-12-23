@@ -10,7 +10,7 @@ import logo from "../assets/autotecnica_botti_logo_completo_nosfondo_bianco.png"
 import UserContext from "../context/userContext";
 
 const UserProfilePage: React.FC = () => {
-  const { actualName, actualSurname, updateNameAndSurname, updateRole } = useContext(UserContext);
+  const { actualName, actualSurname, updateNameAndSurname} = useContext(UserContext);
   const { showErrorToast, showSuccessToast } = useCustomToast();
   const [name, setName] = useState(actualName);
   const [surname, setSurname] = useState(actualSurname);

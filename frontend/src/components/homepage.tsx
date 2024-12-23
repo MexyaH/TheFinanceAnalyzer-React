@@ -1,14 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { firestore } from '../firebase'; // import auth from your firebase configuration file
-import { collection, deleteDoc, doc, getDocs, query, Timestamp, where } from 'firebase/firestore';
+import { collection, deleteDoc, getDocs, query, Timestamp, where } from 'firebase/firestore';
 import DataGridTable from './Table';
 import Navbar from './navbar';
-import { Box, Button, Flex, Icon, IconButton, Text, useDisclosure } from '@chakra-ui/react';
+import { Box, Button, Flex, IconButton, useDisclosure } from '@chakra-ui/react';
 import { GridColDef } from '@mui/x-data-grid';
-import { MdDelete, MdEdit, MdSearch, MdCircle } from "react-icons/md";
+import { MdDelete, MdEdit, MdSearch } from "react-icons/md";
 import { useCustomToast } from './showToast';
-import { format } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogBody,
@@ -16,7 +15,6 @@ import {
   AlertDialogHeader,
   AlertDialogContent,
   AlertDialogOverlay,
-  AlertDialogCloseButton,
 } from '@chakra-ui/react'
 import UserContext from "../context/userContext";
 
@@ -29,6 +27,7 @@ interface Record {
   date: Date;
   dateMod: Date;
   tecnico: string;
+  veicolo: any;
 }
 
 const Homepage: React.FC = () => {
@@ -71,12 +70,6 @@ const Homepage: React.FC = () => {
     }
   };
 
-
-
-
-  const capitalizeFirstLetter = (string: string) => {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-  };
   const fetchRecords = async () => {
     const recordsCollection = collection(firestore, 'operazioni');
     const recordsDocs = await getDocs(recordsCollection);
@@ -109,90 +102,6 @@ const Homepage: React.FC = () => {
   const actualNameSurname = actualName + " " + actualSurname;
 
   const columns: GridColDef<Record>[] = [
-    // { field: 'id', 
-    // headerName: 'ID', 
-    // width: 15
-    //  },
-    // {
-    //   field: 'stato',
-    //   headerName: 'Status',
-    //   headerClassName: 'super-app-theme--header',
-    //   width: 120,
-    //   filterOperators: [
-    //     {
-    //       value: 'assistenza',
-    //       label: '🔵 Assistenza',
-    //       getApplyFilterFn: (filterItem, columnDef) => {
-    //         return (params) => {
-    //           //console.log(params);
-    //           const value = params;
-    //           return Number(value) === 0;
-    //         };
-    //       },
-    //     },
-    //     {
-    //       value: 'rimandabile',
-    //       label: '🟠 Rimandabile',
-    //       getApplyFilterFn: (filterItem, columnDef) => {
-    //         return (params) => {
-    //           const value = params;
-    //           return Number(value) === 1;
-    //         };
-    //       },
-    //     },
-    //     {
-    //       value: 'urgente',
-    //       label: '🔴 Urgente',
-    //       getApplyFilterFn: (filterItem, columnDef) => {
-    //         return (params) => {
-    //           const value = params;
-    //           return Number(value) === 2;
-    //         };
-    //       },
-    //     },
-    //     {
-    //       value: 'risolto',
-    //       label: '🟢 Risolto',
-    //       getApplyFilterFn: (filterItem, columnDef) => {
-    //         return (params) => {
-    //           const value = params;
-    //           return Number(value) === 3;
-    //         };
-    //       },
-    //     },
-    //   ],
-    //   renderCell: (params) => {
-    //     const value = params.value as number;
-    //     let color;
-    //     let text;
-    //     switch (Number(value)) {
-    //       case 0:
-    //         text = 'Assistenza';
-    //         color = '#63b3ed';
-    //         break;
-    //       case 1:
-    //         text = 'Rimandabile';
-    //         color = '#ffb600';
-    //         break;
-    //       case 2:
-    //         text = 'Urgente';
-    //         color = '#ff1414';
-    //         break;
-    //       case 3:
-    //         text = 'Risolto';
-    //         color = '#008000';
-    //         break;
-    //       default:
-    //         text = '404';
-    //         color = 'black';
-    //     }
-    //     return (
-    //       <><Text><Icon aria-label="edit" fontSize="large">
-    //         <MdCircle size={"20px"} style={{ color, verticalAlign: 'middle', textAlign: 'center' }} />
-    //       </Icon>{text}</Text></>
-    //     );
-    //   },
-    // },
     {
       field: 'nomeCliente',
       headerName: 'Cliente',

@@ -11,7 +11,7 @@ interface AuthProviderProps {
 
 const AuthContext = createContext({
   user: null as User | null,
-  login: (user: User) => {},
+  login: (_user: User) => {},
   logout: () => {},
 });
 

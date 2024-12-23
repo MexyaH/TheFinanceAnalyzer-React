@@ -1,4 +1,4 @@
-import { Box, Button, Flex, Heading, Image, Input, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Heading, Image, Input } from "@chakra-ui/react";
 import React, { useState, useContext } from 'react';
 import logo from "../assets/autotecnica_botti_logo_completo_nosfondo_bianco.png";
 import AuthContext from "../context/AuthContext";

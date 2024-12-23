@@ -1,161 +1,39 @@
-import React, { useState, useContext, ChangeEvent, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 import {
   Box,
   Flex,
   Text,
   Grid,
-  Icon,
   Button,
   Select,
-  FormControl,
-  GridItem,
   Input,
   Textarea,
-  HStack,
-  CircularProgress,
-  CircularProgressLabel,
-  Checkbox,
   Heading,
   Spinner,
 } from "@chakra-ui/react";
-import { MdCircle } from "react-icons/md";
 import { Timestamp } from "firebase/firestore";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   collection,
   getDocs,
-  addDoc,
-  query,
-  where,
   doc,
-  updateDoc,
-  DocumentSnapshot,
-  DocumentData,
   setDoc,
 } from "firebase/firestore";
 import { firestore } from "../firebase"; // import auth from your firebase configuration file
 import Navbar from "./navbar";
-import UserContext from "../context/userContext";
 import { useCustomToast } from "./showToast";
 import { SingleDatepicker } from "chakra-dayzed-datepicker";
-import axios from "axios";
-
-// const optionsCliente = [
-//   { value: "", text: { it: " Inserisci un valore", en: " Insert a value" } },
-//   {
-//     value: "Conagra Oakdale USA",
-//     text: { it: "Conagra Oakdale USA", en: "Conagra Oakdale USA" },
-//   },
-//   { value: "Steriltom", text: { it: "Steriltom", en: "Steriltom" } },
-//   { value: "Sugal", text: { it: "Sugal", en: "Sugal" } },
-//   { value: "Martinete", text: { it: "Martinete", en: "Martinete" } },
-//   { value: "Tomatek", text: { it: "Tomatek", en: "Tomatek" } },
-//   {
-//     value: "Tamek Salihli",
-//     text: { it: "Tamek Salihli", en: "Tamek Salihli" },
-//   },
-//   { value: "Los Gatos", text: { it: "Los Gatos", en: "Los Gatos" } },
-//   { value: "Treko", text: { it: "Treko", en: "Treko" } },
-//   { value: "Alsat", text: { it: "Alsat", en: "Alsat" } },
-//   { value: "Apis Carnes", text: { it: "Apis Carnes", en: "Apis Carnes" } },
-//   {
-//     value: "Conagra Canada",
-//     text: { it: "Conagra Canada", en: "Conagra Canada" },
-//   },
-// ];
-
-// const optionsOreLav = Array.from({ length: 48 }, (_, i) => {
-//   const value = (i + 1) * 0.5;
-//   return { value, text: { it: value.toString(), en: value.toString() } };
-// });
-
-// const optionsTipoIntervento = [
-//   { value: "", text: { it: " Inserisci un valore", en: " Insert a value" } },
-//   { value: 0, text: { it: "Assistenza", en: "Assistenza" } },
-//   {
-//     value: 1,
-//     text: {
-//       it: "Non risolutivo (Rimandabile)",
-//       en: "Non risolutivo (Rimandabile)",
-//     },
-//   },
-//   {
-//     value: 2,
-//     text: { it: "Non risolutivo (Urgente)", en: "Non risolutivo (Urgente)" },
-//   },
-//   { value: 3, text: { it: "Risolutivo", en: "Risolutivo" } },
-// ];
-
-// const mappings = [
-//   { cliente: "", commessa: "", machine: "", SW: 0 },
-//   { cliente: "Conagra Oakdale USA", commessa: "O22050", machine: "", SW: 1 },
-//   {
-//     cliente: "Conagra Oakdale USA",
-//     commessa: "O22050",
-//     machine: "Thor M3",
-//     SW: 1,
-//   },
-//   {
-//     cliente: "Conagra Oakdale USA",
-//     commessa: "O22050",
-//     machine: "Thor M6",
-//     SW: 1,
-//   },
-//   { cliente: "Steriltom", commessa: "O22066", machine: "Thor M2+2+2", SW: 2 },
-//   { cliente: "Sugal", commessa: "O22089", machine: "Thor M3", SW: 2 },
-//   { cliente: "Martinete", commessa: "", machine: "", SW: 0 },
-//   { cliente: "Martinete", commessa: "O23021", machine: "Linea HBO 350", SW: 0 },
-//   {
-//     cliente: "Martinete",
-//     commessa: "O23091",
-//     machine: "Sterilizzatore",
-//     SW: 0,
-//   },
-//   { cliente: "Tomatek", commessa: "O23051", machine: "Thor M6", SW: 1 },
-//   { cliente: "Tamek Salihli", commessa: "O23068", machine: "", SW: 0 },
-//   {
-//     cliente: "Tamek Salihli",
-//     commessa: "O23068",
-//     machine: "Evaporatore",
-//     SW: 0,
-//   },
-//   {
-//     cliente: "Tamek Salihli",
-//     commessa: "O23068",
-//     machine: "Linea HBV 500",
-//     SW: 0,
-//   },
-//   { cliente: "Los Gatos", commessa: "O23078", machine: "", SW: 0 },
-//   { cliente: "Los Gatos", commessa: "O23078", machine: "Linea HBV 500", SW: 1 },
-//   { cliente: "Los Gatos", commessa: "O23078", machine: "Thor M3+3", SW: 1 },
-//   { cliente: "Treko", commessa: "O23087", machine: "Sterilizzatore", SW: 2 },
-//   { cliente: "Alsat", commessa: "O23090", machine: "", SW: 0 },
-//   { cliente: "Alsat", commessa: "O23090", machine: "Metis", SW: 0 },
-//   { cliente: "Alsat", commessa: "O23090", machine: "Thor M6", SW: 0 },
-//   {
-//     cliente: "Apis Carnes",
-//     commessa: "O23095",
-//     machine: "Linea HBT 450",
-//     SW: 0,
-//   },
-//   {
-//     cliente: "Conagra Canada",
-//     commessa: "O24026",
-//     machine: "Riempitrice",
-//     SW: 1,
-//   },
-// ];
 
 const EditPage = () => {
   const location = useLocation();
-  const statusMap = {
-    "🔵": "inCorso",
-    "🟢": "completed",
-    "🟡": "standby",
-    "🟠": "problem",
-    "🔴": "canceled",
+  const statusMap: { [key: string]: keyof typeof stato } = {
+    "🔵": "blueStatus",
+    "🟢": "greenStatus",
+    "🟡": "yellowStatus",
+    "🟠": "orangeStatus",
+    "🔴": "redStatus",
   };
   const record = location.state.record;
   //console.log(record)
@@ -180,10 +58,9 @@ const EditPage = () => {
   const [note, setNote] = useState(record.note)
   //console.log(pezzi)
 
-  const [selectedStatus, setSelectedStatus] = useState();
+  const [selectedStatus, setSelectedStatus] = useState<any>();
   const [isLoading, setIsLoading] = useState(false)
   const [clientiList, setClientiList] = useState<String[]>([''])
-  const [titoloLavorazione, setTitoloLavoraione] = useState('')
   
   const fetchClienti = async () => {
     const recordsUsersCollection = collection(firestore, 'clienti');
@@ -208,496 +85,12 @@ const EditPage = () => {
 
   useEffect(() => {
     const selectedStatusCalc = Object.entries(statusMap).find(
-      ([emoji, key]) => stato[key]
+      ([_emoji, key]) => stato[key]
     )?.[0] || "🔵"; // Default to 🔵 if no value is true
     setSelectedStatus(selectedStatusCalc)
   }, [stato])
 
-  /*
-  // //console.log(record);
-  //const { languageSelected } = useContext(LanguageContext);
-  //const { actualName, actualSurname } = useContext(UserContext);
-  const navigate = useNavigate();
-  const { showErrorToast, showSuccessToast } = useCustomToast();
-  const [cliente, setCliente] = useState(record.cliente);
-  const [commessa, setCommessa] = useState(record.commessa);
-  const [date, setDate] = useState(new Date());
-  const [note, setNote] = useState(record.note);
-  const [oreLavorate, setOreLavorate] = useState(record.oreLavorate as number);
-  const [tipoIntervento, setTipoIntervento] = useState(record.tipoIntervento);
-  const [ourCommessa] = useState("");
-  const [macchina, setMacchina] = useState(record.macchina);
-  const [machineOptions, setMachineOptions] = useState<string[]>([]);
-  const [commessaOptions, setCommessaOptions] = useState<string[]>([]);
-  const [sw, setSw] = useState(0);
-  const [inputKey] = useState(Math.random().toString());
-  const [problem, setProblem] = useState(record.problem);
-  const [newTecnicoCliente, setNewTecnicoCliente] = useState('');
-  const [tecnicoClienteList, setTecnicoClienteList] = useState<any[]>([]);
-  const [tecnicoCliente, setTecnicoCliente] = useState(record.tecnicoCliente);
-  const [showTecnicoInput, setshowTecnicoInput] = useState(false);
-  const [isClickedSchema, setIsClickedSchema] = useState(false);
-  const [filePathSCHEMA, setFilePathSCHEMA] = useState(record.filePathSCHEMA);
-  const [uploadProgressSCHEMA, setUploadProgressSCHEMA] = useState(0);
-  const [fileSCHEMA, setFileSCHEMA] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [filePLC, setFilePLC] = useState<File | null>(null);
-  const [fileHMI, setFileHMI] = useState<File | null>(null);
-  const [isClickedPLC, setIsClickedPLC] = useState(false);
-  const [isClickedHMI, setIsClickedHMI] = useState(false);
-  const [filePathPLC, setFilePathPLC] = useState('');
-  const [filePathHMI, setFilePathHMI] = useState('');
-  const [uploadProgressPLC, setUploadProgressPLC] = useState(0);
-  const [uploadProgressHMI, setUploadProgressHMI] = useState(0);
-
-  const [problemsList, setProblemsList] = useState<any[]>([]); // add this state variable to store the problems
-  const [newProblem, setNewProblem] = useState("");
-
-  const fetchProblems = async () => {
-    const problemsCollection = collection(firestore, "problems");
-    const problemDocs = await getDocs(problemsCollection);
-    const problemsData: any[] = [];
-    problemDocs.forEach((doc) => {
-      problemsData.push(doc.data());
-    });
-    setProblemsList(problemsData);
-    ////console.log(problemsData)
-  };
-  const fetchTecnicoCliente = async () => {
-    const ClienteCollection = collection(firestore, 'tecnicocliente');
-    const clienteDocs = await getDocs(ClienteCollection);
-    const tecnicoClienteData: any[] = [];
-    clienteDocs.forEach((doc) => {
-        tecnicoClienteData.push(doc.data());
-        ////console.log(doc.data())
-
-    });
-    
-    setTecnicoClienteList(tecnicoClienteData);
-};
-
-  useEffect(() => {
-    fetchProblems();
-    fetchTecnicoCliente();
-  }, []);
-
-  const url = new URL(window.location.origin);
-  url.port = '3005';
-  //console.log(url.toString());
-
-  const resetForm = () => {
-    setCliente("");
-    setCommessa("");
-    setDate(new Date());
-    setNote("");
-    setOreLavorate(0.5);
-    setTipoIntervento("");
-    setMacchina("");
-    setMachineOptions([]);
-    setCommessaOptions([]);
-    setSw(0);
-    setProblem("");
-  };
-
-  const updateRecord = async () => {
-    const problemsCollection = collection(firestore, "problems");
-    const q = query(
-      problemsCollection,
-      where("cliente", "==", cliente),
-      where("machine", "==", macchina),
-      where("commessa", "==", commessa),
-      where("desc", "==", problem)
-    );
-
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach(async (docSnapshot) => {
-      const docRef = doc(firestore, "problems", docSnapshot.id);
-      await updateDoc(docRef, { status: 2 });
-    });
-  };
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const recordsCollection = collection(firestore, "records");
-
-    const q = query(recordsCollection, where("formData.id", "==", record.id));
-
-    const querySnapshot = await getDocs(recordsCollection);
-    let docToUpdate: DocumentSnapshot<DocumentData> | null = null;
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      if (data.id === record.id) {
-        docToUpdate = doc;
-      }
-    });
-
-    if (docToUpdate) {
-      let formData;
-      ////console.log(tipoIntervento);
-      if (tipoIntervento === "0") {
-        formData = {
-          //id: record.id,
-          cliente: cliente,
-          commessa: commessa,
-          macchina: macchina,
-          ourCommessa: ourCommessa,
-          oreLavorate: oreLavorate,
-          date: date,
-          dateMod: new Date(),
-          problem: "",
-          tipoIntervento: tipoIntervento,
-          tecnicoCliente: tecnicoCliente,
-          filePathPLC: record.filePathPLC === "" ? filePathPLC : record.filePathPLC,
-          filePathHMI: record.filePathHMI === "" ? filePathHMI : record.filePathHMI,
-          filePathSCHEMA: record.filePathSCHEMA === "" ? filePathSCHEMA : record.filePathSCHEMA,
-          sw: sw,
-          note: note,
-        };
-      } else {
-        formData = {
-          //id: record.id,
-          cliente: cliente,
-          commessa: commessa,
-          macchina: macchina,
-          ourCommessa: ourCommessa,
-          oreLavorate: oreLavorate,
-          date: date,
-          dateMod: new Date(),
-          tipoIntervento: tipoIntervento,
-          tecnicoCliente: tecnicoCliente,
-          filePathPLC: record.filePathPLC === "" ? filePathPLC : record.filePathPLC,
-          filePathHMI: record.filePathHMI === "" ? filePathHMI : record.filePathHMI,
-          filePathSCHEMA: record.filePathSCHEMA === "" ? filePathSCHEMA : record.filePathSCHEMA,
-          problem: problem,
-          sw: sw,
-          note: note,
-        };
-      }
-      // //console.log(formData);
-      showSuccessToast("Record updated correctly");
-      await updateDoc((docToUpdate as DocumentSnapshot<DocumentData>).ref, formData);
-      
-    }
-
-    showSuccessToast("Form submitted successfully!");
-    resetForm();
-    navigate("/")
-  };
-
-  const handleFileChange = (resource: string) => (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    switch (resource) {
-        case "PLC":
-            ////console.log(file);
-            setFilePLC(file || null);
-            break;
-        case "HMI":
-            //le.log(file);
-            setFileHMI(file || null);
-            break;
-        case "SCHEMA":
-            ////console.log(file);
-            setFileSCHEMA(file || null);
-            break;
-    
-    }
-    // Do something with the file
-  };
-
-  const anotherOptions = problemsList.filter((p) => p.cliente === cliente && p.commessa === commessa && p.macchina === macchina).map((p) => ({ text: p.desc}));
-  ////console.log(anotherOptions)
-  const handleClienteChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedCliente = event.target.value;
-    setCliente(selectedCliente);
-    const selectedMappings = mappings.filter(
-      (m) => m.cliente === selectedCliente
-    );
-    const machineOptions = selectedMappings.map((m) => m.machine);
-    const commessaOptions = selectedMappings
-      .map((m) => m.commessa)
-      .filter((value, index, self) => self.indexOf(value) === index);
-    setMachineOptions(machineOptions);
-    setCommessaOptions(commessaOptions);
-    if (selectedMappings.length > 0) {
-      const firstMapping = selectedMappings[0];
-      setCommessa(firstMapping.commessa);
-      setMacchina(firstMapping.machine);
-      setSw(firstMapping.SW);
-    }
-  };
-
-  useEffect(() => {
-    const selectedMappings = mappings.filter((m) => m.cliente === cliente);
-    const machineOptions = selectedMappings.map((m) => m.machine);
-    const commessaOptions = selectedMappings
-      .map((m) => m.commessa)
-      .filter((value, index, self) => self.indexOf(value) === index);
-    setMachineOptions(machineOptions);
-    setCommessaOptions(commessaOptions);
-    if (selectedMappings.length > 0) {
-      const firstMapping = selectedMappings[0];
-      setCommessa(firstMapping.commessa);
-      setMacchina(firstMapping.machine);
-      setSw(firstMapping.SW);
-    }
-    setMacchina(record.macchina);
-  }, []);
-
-  const handleMachineChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedClienteMappings = mappings.filter(
-      (m) => m.cliente === cliente
-    );
-    const selectedMachine = event.target.value;
-    setMacchina(selectedMachine);
-    const selectedMappings = selectedClienteMappings.filter(
-      (m) => m.machine === selectedMachine
-    );
-    //const commessaOptions = selectedMappings.map(m => m.commessa);
-    //setCommessaOptions(commessaOptions);
-    if (selectedMappings.length > 0) {
-      const firstMapping = selectedMappings[0];
-      setCommessa(firstMapping.commessa);
-      setSw(firstMapping.SW);
-    }
-  };
-
-  const handleUploadPLC = async () => {
-    setUploadProgressPLC(0);
-    if (!filePLC) {
-        showErrorToast('No file selected.');
-        return;
-    }
-    const FileInfo = {
-      cliente: cliente,
-      commessa: commessa,
-      machine: macchina,
-      type: "31_Plc",
-    };
-    setIsUploading(true);
-    const formData = new FormData();
-    formData.append('file', filePLC);
-    formData.append("fileInfo", JSON.stringify(FileInfo));
-    try {
-        const response = await axios.post(`${url.toString()}upload`, formData, {
-            onUploadProgress: (progressEvent) => {
-                if (progressEvent.total) {
-                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                    setUploadProgressPLC(percentCompleted);
-                }
-            },
-        });
-        setFilePathPLC(response.data.filePath);
-        showSuccessToast('PLC salvato correttamente.');
-        setIsClickedPLC(false);
-    } catch (error) {
-        if (axios.isAxiosError(error)) {
-            showErrorToast('Error: ' + error.response?.data.error);
-        } else if (error instanceof Error) {
-            showErrorToast('Error: ' + error.message);
-        }
-    }
-};
-const handleUploadHMI = async () => {
-    setUploadProgressHMI(0);
-    if (!fileHMI) {
-        showErrorToast('No file selected.');
-        return;
-    }
-    const FileInfo = {
-      cliente: cliente,
-      commessa: commessa,
-      machine: macchina,
-      type: "32_HMI",
-    };
-    setIsUploading(true);
-    const formData = new FormData();
-    formData.append('file', fileHMI);
-    formData.append("fileInfo", JSON.stringify(FileInfo));
-    try {
-        const response = await axios.post(`${url.toString()}upload`, formData, {
-            onUploadProgress: (progressEvent) => {
-                if (progressEvent.total) {
-                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                    setUploadProgressHMI(percentCompleted);
-                }
-            },
-        });
-        setFilePathHMI(response.data.filePath);
-        showSuccessToast('HMI salvato correttamente.');
-        setIsClickedHMI(false);
-    } catch (error) {
-        if (axios.isAxiosError(error)) {
-            showErrorToast('Error: ' + error.response?.data.error);
-        } else if (error instanceof Error) {
-            showErrorToast('Error: ' + error.message);
-        }
-    }
-};
-
-  const handleUploadSchema = async () => {
-    setUploadProgressSCHEMA(0);
-    if (!fileSCHEMA) {
-        showErrorToast('No file selected.');
-        return;
-    }
-    const FileInfo = {
-      cliente: cliente,
-      commessa: commessa,
-      machine: macchina,
-      type: "05_Schema",
-    };
-    setIsUploading(true);
-    const formData = new FormData();
-    formData.append('file', fileSCHEMA);
-    formData.append("fileInfo", JSON.stringify(FileInfo));
-    try {
-        const response = await axios.post(`${url.toString()}upload`, formData, {
-            onUploadProgress: (progressEvent) => {
-                if (progressEvent.total) {
-                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                    setUploadProgressSCHEMA(percentCompleted);
-                }
-            },
-        });
-        setFilePathSCHEMA(response.data.filePath);
-        showSuccessToast('Schema salvato correttamente.');
-        setIsClickedSchema(false);
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        showErrorToast('Error: ' + error.response?.data.error);
-      } else if (error instanceof Error) {
-        showErrorToast('Error: ' + error.message);
-      }
-    }
-  };
-
-  const handleCreateProblems = async () => {
-    if (!newProblem) {
-      showErrorToast("Please enter a problem description.");
-      return;
-    }
-    if (!cliente) {
-      showErrorToast("Please select a client");
-      return;
-    }
-    if (!commessa) {
-      showErrorToast("Please select a commessa");
-      return;
-    }
-    if (!macchina) {
-      showErrorToast("Please select a machine");
-      return;
-    }
-    const problemsCollection = collection(firestore, "problems");
-    await addDoc(problemsCollection, {
-      desc: newProblem,
-      status: 1,
-      cliente: cliente,
-      commessa: commessa,
-      macchina: macchina,
-    });
-
-    fetchProblems();
-    setProblem(newProblem);
-    showSuccessToast("Problema creato correttamente");
-    // set the value of the Select to the ID of the new problem
-    setNewProblem("");
-  };
-
-
-  ////console.log(record);
-  /*
-    const handleDownload = async (filePath: string) => {
-        try {
-            filePath = filePath.replace(/\\/g, '/');
-            filePath = filePath.replace('uploads/', ''); // Remove 'uploads/' from the file path
-            const urla = new URL(window.location.origin);
-            urla.port = '3005';
-            const response = await fetch(`${urla.toString()}download/${encodeURIComponent(filePath)}`);
-            if (!response.ok) {
-                throw new Error("Network response was not ok");
-            }
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filePath.split('/').pop() || 'file'; // Use the actual file name and extension
-            document.body.appendChild(a); // we need to append the element to the dom -> invisible
-            a.click();
-            a.remove();  //afterwards we remove the element again         
-        } catch (error) {
-            //console.error('There has been a problem with your fetch operation: ', error);
-        }
-    };
-
-  const handleChangeTecnicoCliente = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setTecnicoCliente(event.target.value)
-    if (event.target.value === 'crea') {
-        setshowTecnicoInput(true);
-    }else{
-        setshowTecnicoInput(false);
-    }
-    ////console.log(event.target.value)
-  }
-
-  const handleCreateTecnicoCliente = async () => {
-    ////console.log(newTecnicoCliente)
-    const TecnicoCollection = collection(firestore, 'tecnicocliente');
-    await addDoc(TecnicoCollection, {
-        tecnicocliente: newTecnicoCliente,
-    });
-
-    fetchTecnicoCliente();
-    setTecnicoCliente(newTecnicoCliente);
-    setshowTecnicoInput(false);
-    setTecnicoClienteList([newTecnicoCliente]); // Change the type of tecnicoClienteList to string[]
-    showSuccessToast('Tecnico Cliente creato correttamente');
-    // set the value of the Select to the ID of the new problem
-    setNewTecnicoCliente('');
-  };
-
-  const optionsTipoIntervento = [
-    { value: "", text: { it: " Inserisci un valore", en: " Insert a value" } },
-    { value: 0, text: { it: "Assistenza", en: "Assistenza" } },
-    {
-      value: 1,
-      text: {
-        it: "Non risolutivo (Rimandabile)",
-        en: "Non risolutivo (Rimandabile)",
-      },
-    },
-    {
-      value: 2,
-      text: { it: "Non risolutivo (Urgente)", en: "Non risolutivo (Urgente)" },
-    },
-    { value: 3, text: { it: "Risolutivo", en: "Risolutivo" } },
-  ];
-  const value = record.tipoIntervento as number;
-  let color;
-  switch (Number(value)) {
-    case 0:
-      color = "#63b3ed";
-      break;
-    case 1:
-      color = "#ffb600";
-      break;
-    case 2:
-      color = "#ff1414";
-      break;
-    case 3:
-      color = "#008000";
-      break;
-    default:
-      color = "black";
-  }
-  const tipoInterventoOption = optionsTipoIntervento.find(
-    (option) => option.value === Number(record.tipoIntervento)
-  );
-  const tipoInterventoText = tipoInterventoOption
-    ? tipoInterventoOption.text.it
-    : "Unknown";
-*/
-  const handleChangePezzi = (value, method, id) => {
+  const handleChangePezzi = (value: any, method: any, id: any) => {
     // Create a new copy of the array
     const updatedPezzi = [...pezzi];
     // Update the specific field
@@ -706,7 +99,7 @@ const handleUploadHMI = async () => {
     setPezzi(updatedPezzi);
   };
 
-  const handleChangeAcconti = (value, method, id) => {
+  const handleChangeAcconti = (value: any, method: any, id: any) => {
     // Create a new copy of the array
     const updatedAcconti = [...acconti];
     // Update the specific field
@@ -715,7 +108,7 @@ const handleUploadHMI = async () => {
     setAcconti(updatedAcconti);
   };
 
-  const handleChangeDate = (value, method, id) => {
+  const handleChangeDate = (value: any, method: any, id: any) => {
     // Format the date
     const valueFormatted = {
       seconds: Math.floor(value.getTime() / 1000),
@@ -732,12 +125,12 @@ const handleUploadHMI = async () => {
   const timestampToDate = (timestamp: any) => {
     return new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000);
   };
-  const handleChangeStatus = (event) => {
+  const handleChangeStatus = (event: any) => {
     const selectedEmoji = event.target.value;
     const selectedKey = statusMap[selectedEmoji];
 
     // Create a new `stato` object with all values set to false except the selected one
-    const updatedStato = Object.keys(stato).reduce((acc, key) => {
+    const updatedStato = Object.keys(stato).reduce((acc: any, key: any) => {
       acc[key] = key === selectedKey;
       return acc;
     }, {});
@@ -803,7 +196,7 @@ const handleUploadHMI = async () => {
                   onChange={(e) => setCliente(e.target.value)}
                   required
                 >
-                  {clientiList.map((option, index) => (
+                  {clientiList.map((option: any, index: any) => (
                       <option key={index} value={option}>
                         {option}
                       </option>
