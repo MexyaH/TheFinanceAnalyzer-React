@@ -1,6 +1,6 @@
 services:
   bottifront:
-    image: bonda23/autotecnicabottifront:v0.0.1
+    image: bonda23/autotecnicabottifront:v0.0.10
     build:
       context: .
       dockerfile: ./Dockerfile

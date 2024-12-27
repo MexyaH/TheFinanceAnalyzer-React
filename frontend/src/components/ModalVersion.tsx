@@ -24,9 +24,9 @@ const ModalVersion = () => {
                             </Flex>
                             <Box marginTop={10}>
                                 <Heading size="md" marginTop={5}>Versione</Heading>
-                                <Text>0.1</Text>
+                                <Text>0.0.10</Text>
                                 <Heading size="md" marginTop={5}>Ultima Modifica</Heading>
-                                <Text>12/11/2024</Text>
+                                <Text>27/12/2024</Text>
                                 <Heading size="md" marginTop={5}>Sviluppatore</Heading>
                                 <Text>{developer}</Text>
                             </Box>
