@@ -24,9 +24,9 @@ const ModalVersion = () => {
                             </Flex>
                             <Box marginTop={10}>
                                 <Heading size="md" marginTop={5}>Versione</Heading>
-                                <Text>0.0.10</Text>
+                                <Text>1.0.0</Text>
                                 <Heading size="md" marginTop={5}>Ultima Modifica</Heading>
-                                <Text>27/12/2024</Text>
+                                <Text>30/12/2024</Text>
                                 <Heading size="md" marginTop={5}>Sviluppatore</Heading>
                                 <Text>{developer}</Text>
                             </Box>
@@ -44,3 +44,10 @@ const ModalVersion = () => {
 }
 
 export default ModalVersion
+
+/* Rimanente:
+- Controllare che tutto funzioni correttamente
+- Metterlo su RB
+- Migliorare velocità codice (pagina edit molto incasinata)
+
+*/

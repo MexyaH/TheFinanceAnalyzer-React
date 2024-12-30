@@ -105,7 +105,7 @@ const VisualizationPage = () => {
           problema: record.problema || "Non specificato",
           tecnico: record.tecnico || "Non specificato",
           ore: record.oreLav,
-          intervento: record.titolo || "Non specificato",
+          //intervento: record.titolo || "Non specificato",
           note: record.note || "Nessuna nota",
           stato: record.stato.canceled
             ? "Cancellato"
@@ -124,9 +124,26 @@ const VisualizationPage = () => {
         { header: "Data Inizio", dataKey: "dataInizio" },
         { header: "Data Fine", dataKey: "dataFine" },
         { header: "Ore Lavorate", dataKey: "ore" },
-        { header: "Tipo Intervento", dataKey: "intervento" },
+        //{ header: "Tipo Intervento", dataKey: "intervento" },
         { header: "Note", dataKey: "note" },
         { header: "Stato", dataKey: "stato" },
+      ],
+    });
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 10,
+      headStyles: {
+        fillColor: [135, 0, 0], // RGB color for the background of headers
+      },
+      body: record.interventi.map((int: any) => ({
+        title: int.title,
+        costo: int.amount + "€",
+        data: `${timestampToDate(int.date).toLocaleDateString()}`,
+      })),
+      columns: [
+        { header: "Lavorazione", dataKey: "title" },
+        { header: "Costo", dataKey: "costo" },
+        { header: "Data", dataKey: "data" },
       ],
     });
 
@@ -301,7 +318,7 @@ const VisualizationPage = () => {
                   >
                     <Text>{item.name}</Text>
                     <Text>{item.qta}</Text>
-                    <Text>{item.price}</Text>
+                    <Text>{item.price} €</Text>
                     <Text>{item.fornitor}</Text>
                   </Grid>
                 );
@@ -329,8 +346,8 @@ const VisualizationPage = () => {
                     borderRadius="md"
                   >
                     <Text>{item.payment}</Text>
-                    <Text>{item.amount}</Text>
-                    <Text>{item.date.seconds}</Text>
+                    <Text>{item.amount} €</Text>
+                    <Text>{timestampToDate(item.date).toLocaleDateString()}</Text>
                   </Grid>
                 );
               })}

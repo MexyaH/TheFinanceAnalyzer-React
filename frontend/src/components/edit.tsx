@@ -19,8 +19,19 @@ import {
   ModalOverlay,
   ModalHeader,
   ModalCloseButton,
+  Popover,
+  PopoverContent,
+  PopoverFooter,
+  PopoverBody,
+  PopoverHeader,
+  PopoverCloseButton,
+  PopoverArrow,
+  PopoverTrigger,
+  InputGroup,
+  InputRightElement,
 } from "@chakra-ui/react";
 import { Timestamp } from "firebase/firestore";
+import { RiDeleteBinFill, RiEditLine } from "react-icons/ri";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { collection, getDocs, doc, setDoc } from "firebase/firestore";
@@ -48,7 +59,7 @@ const EditPage = () => {
   const [dataInizio, setDataInizio] = useState(record.dataInizio);
   const [dataFine, setDataFine] = useState(record.dataFine);
   const [oreLavorate, setOreLavorate] = useState(record.oreLav);
-  const [titoloIntervento, setTitoloIntervento] = useState(record.titolo);
+  const [interventi, setInterventi] = useState(record.interventi);
   const [marcaVeicolo, setMarcaVeicolo] = useState(record.veicolo.marca);
   const [targaVeicolo, setTargaVeicolo] = useState(record.veicolo.targa);
   const [vimVeicolo, setVimVeicolo] = useState(record.veicolo.vim);
@@ -65,6 +76,7 @@ const EditPage = () => {
   const [selectedStatus, setSelectedStatus] = useState<any>();
   const [isLoading, setIsLoading] = useState(false);
   const [clientiList, setClientiList] = useState<String[]>([""]);
+  const [idxInt, setIdxInt] = useState<number>(0);
   const [newAcconto, setNewAcconto] = useState({
     payment: "",
     amount: 0,
@@ -79,12 +91,41 @@ const EditPage = () => {
     price: 0, // Default price
     fornitor: "", // Default fornitor
   });
+  const [editedIntervento, setEditedIntervento] = useState({
+    title: "",
+    amount: 0,
+    date: {
+      seconds: Math.floor(new Date().getTime() / 1000),
+      nanoseconds: (new Date().getTime() % 1000) * 1000000,
+    },
+  });
+
+  const [newIntervento, setNewIntervento] = useState({
+    title: "",
+    amount: 0,
+    date: {
+      seconds: Math.floor(new Date().getTime() / 1000),
+      nanoseconds: (new Date().getTime() % 1000) * 1000000,
+    },
+  });
 
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isOpenPezzi,
     onOpen: onOpenPezzi,
     onClose: onClosePezzi,
+  } = useDisclosure();
+
+  const {
+    isOpen: isOpenEditInterventi,
+    onOpen: onOpenEditInterventi,
+    onClose: onCloseEditInterventi,
+  } = useDisclosure();
+
+  const {
+    isOpen: isOpenNewIntervento,
+    onOpen: onOpenNewIntervento,
+    onClose: onCloseNewIntervento,
   } = useDisclosure();
 
   const fetchClienti = async () => {
@@ -125,6 +166,8 @@ const EditPage = () => {
   };
 
   const handleInputChange = (field: string, value: any) => {
+    console.log(field);
+    console.log(value);
     setNewAcconto((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -188,11 +231,58 @@ const EditPage = () => {
   const handleAddAcconto = () => {
     setAcconti([...acconti, newAcconto]);
     onClose();
+    setNewAcconto({
+      payment: "",
+      amount: 0,
+      date: {
+        seconds: Math.floor(new Date().getTime() / 1000),
+        nanoseconds: (new Date().getTime() % 1000) * 1000000,
+      },
+    });
   };
 
   const handleAddPezzi = () => {
     setPezzi([...pezzi, newPezzi]);
     onClosePezzi();
+  };
+
+  const handleAddIntervento = () => {
+    setInterventi([...interventi, newIntervento]);
+    onCloseNewIntervento();
+  };
+
+  const handleSubmitInterventi = () => {
+    const updatedInterventi = [...interventi];
+
+    // Merge updated fields with the existing ones
+    updatedInterventi[idxInt] = {
+      ...interventi[idxInt], // Existing data
+      ...editedIntervento, // New data (overwrites only the updated fields)
+    };
+
+    setInterventi(updatedInterventi); // Update the state
+    onCloseEditInterventi(); // Close the modal
+  };
+
+  const handleEditInterventi = (idx: number) => {
+    setIdxInt(idx);
+    setEditedIntervento(interventi[idx]); // Load the selected intervento's current data
+    onOpenEditInterventi();
+  };
+
+  const handleRemoveIntervento = (idx: number) => {
+    const updatedInterventi = interventi.filter((_: any, i: any) => i !== idx);
+    setInterventi(updatedInterventi);
+  };
+
+  const handleRemovePezzo = (idx: number) => {
+    const updatedPezzi = pezzi.filter((_: any, i: number) => i !== idx);
+    setPezzi(updatedPezzi);
+  };
+
+  const handleRemoveAcconto = (idx: number) => {
+    const updatedAcconti = acconti.filter((_: any, i: number) => i !== idx);
+    setAcconti(updatedAcconti);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -202,7 +292,7 @@ const EditPage = () => {
     const formData = {
       id: id,
       nomeCliente: cliente,
-      titolo: titoloIntervento,
+      interventi: interventi,
       pezzi: pezzi,
       acconti: acconti.map((acconto: any) => ({
         ...acconto,
@@ -417,15 +507,304 @@ const EditPage = () => {
                 />
               </Box>
             </Grid>
-            <Grid templateColumns={["repeat(1, 1fr)"]} gap={6} mb={6}>
-              <Box>
+            <Grid
+              templateColumns={["repeat(1, 1fr)"]}
+              gap={6}
+              mb={6}
+              w={"100%"}
+              textAlign={"center"}
+            >
+              <Box
+                border={"1px solid gray"}
+                borderRadius={"md"}
+                p={3}
+                maxHeight={200}
+                overflowY={"auto"}
+              >
                 <FieldTitle title="Intervento" />
-                <Input
-                  value={titoloIntervento}
-                  onChange={(e) => setTitoloIntervento(e.target.value)}
-                ></Input>
+                <Button onClick={onOpenNewIntervento} colorScheme="blue" mb={4}>
+                  Aggiungi Intervento
+                </Button>
+                {interventi.map((item: any, idx: any) => (
+                  <Box
+                    border={"1px solid gray"}
+                    p={3}
+                    mb={2}
+                    display="grid"
+                    gridTemplateColumns="1fr 1fr 1fr auto"
+                    gap={4}
+                    alignItems="center"
+                    borderRadius={"md"}
+                  >
+                    <Text maxWidth={300} isTruncated>
+                      {item.title}
+                    </Text>
+                    <Text>{item.amount} €</Text>
+                    <Text>
+                      {timestampToDate(item.date).toLocaleDateString()}
+                    </Text>
+                    <Box display="flex" justifyContent="flex-end" gap={2}>
+                      <Box display="flex" justifyContent="flex-end" gap={2}>
+                        <Popover>
+                          <PopoverTrigger>
+                            <Button colorScheme="red" size="sm">
+                              <RiDeleteBinFill />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent>
+                            <PopoverArrow />
+                            <PopoverCloseButton />
+                            <PopoverHeader>Conferma eliminazione</PopoverHeader>
+                            <PopoverBody>
+                              Sei sicuro di voler eliminare questo intervento?
+                            </PopoverBody>
+                            <PopoverFooter
+                              display="flex"
+                              justifyContent="flex-end"
+                            >
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleRemoveIntervento(idx)}
+                              >
+                                Sì, elimina
+                              </Button>
+                            </PopoverFooter>
+                          </PopoverContent>
+                        </Popover>
+                        <Button
+                          size="sm"
+                          onClick={() => handleEditInterventi(idx)}
+                        >
+                          <RiEditLine />
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Box>
+                ))}
               </Box>
             </Grid>
+            <Modal isOpen={isOpenNewIntervento} onClose={onCloseNewIntervento}>
+              <ModalOverlay />
+              <ModalContent>
+                <ModalHeader>Modifica Intervento</ModalHeader>
+                <ModalCloseButton />
+                <ModalBody>
+                  <Grid templateColumns="repeat(1, 1fr)" gap={4}>
+                    <Box>
+                      <FieldTitle title="Nome Intervento" />
+                      <Input
+                        value={newIntervento.title || ""}
+                        onChange={(e) =>
+                          setNewIntervento((prev) => ({
+                            ...prev,
+                            title: e.target.value,
+                          }))
+                        }
+                        placeholder="Nome Intervento"
+                        type="text"
+                      />
+                    </Box>
+                    <Box>
+                      <FieldTitle title="Costo" />
+                      <InputGroup>
+                        <Input
+                          value={newIntervento.amount || ""}
+                          onChange={(e) =>
+                            setNewIntervento((prev) => ({
+                              ...prev,
+                              amount: parseFloat(e.target.value) || 0,
+                            }))
+                          }
+                          placeholder="Costo"
+                          type="number"
+                        />
+                        <InputRightElement pointerEvents="none" color="gray.500">
+                          €
+                        </InputRightElement>
+                      </InputGroup>
+                    </Box>
+                    <Box>
+                      <FieldTitle title="Data" />
+                      <SingleDatepicker
+                        name="date-input"
+                        date={
+                          newIntervento.date
+                            ? timestampToDate(editedIntervento.date)
+                            : new Date()
+                        }
+                        onDateChange={(date) =>
+                          setNewIntervento((prev) => ({
+                            ...prev,
+                            date: {
+                              seconds: Math.floor(date.getTime() / 1000),
+                              nanoseconds: (date.getTime() % 1000) * 1000000,
+                            },
+                          }))
+                        }
+                        configs={{
+                          dateFormat: "yyyy-MM-dd",
+                          dayNames: "Dom,Lun,Mar,Mer,Gio,Ven,Sab".split(","), // length of 7
+                          monthNames:
+                            "Gen,Feb,Mar,Apr,Mag,Giu,Lug,Ago,Set,Ott,Nov,Dec".split(
+                              ","
+                            ), // length of 12
+                          firstDayOfWeek: 1, // default is 0, the dayNames[0], which is Sunday if you don't specify your own dayNames,
+                        }}
+                        propsConfigs={{
+                          triggerBtnProps: {
+                            fontSize: "md",
+                          },
+                          dateNavBtnProps: {
+                            colorScheme: "blue",
+                            variant: "outline",
+                          },
+                          dayOfMonthBtnProps: {
+                            defaultBtnProps: {
+                              _hover: {
+                                background: "blue.400",
+                                color: "black",
+                              },
+                            },
+                            selectedBtnProps: {
+                              background: "blue.200",
+                              color: "black",
+                            },
+                            todayBtnProps: {
+                              background: "#4681ac",
+                            },
+                          },
+                        }}
+                      />
+                    </Box>
+                  </Grid>
+                </ModalBody>
+                <ModalFooter>
+                  <Button
+                    colorScheme="green"
+                    mr={3}
+                    onClick={handleAddIntervento}
+                  >
+                    Modifica
+                  </Button>
+                  <Button variant="ghost" onClick={onCloseNewIntervento}>
+                    Cancella
+                  </Button>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
+            <Modal
+              isOpen={isOpenEditInterventi}
+              onClose={onCloseEditInterventi}
+            >
+              <ModalOverlay />
+              <ModalContent>
+                <ModalHeader>Modifica Intervento</ModalHeader>
+                <ModalCloseButton />
+                <ModalBody>
+                  <Grid templateColumns="repeat(1, 1fr)" gap={4}>
+                    <Box>
+                      <FieldTitle title="Nome Intervento" />
+                      <Input
+                        value={editedIntervento.title || ""}
+                        onChange={(e) =>
+                          setEditedIntervento((prev) => ({
+                            ...prev,
+                            title: e.target.value,
+                          }))
+                        }
+                        placeholder="Nome Intervento"
+                        type="text"
+                      />
+                    </Box>
+                    <Box>
+                      <FieldTitle title="Costo" />
+                      <InputGroup>
+                        <Input
+                          value={editedIntervento.amount || ""}
+                          onChange={(e) =>
+                            setEditedIntervento((prev) => ({
+                              ...prev,
+                              amount: parseFloat(e.target.value) || 0,
+                            }))
+                          }
+                          placeholder="Costo"
+                          type="number"
+                        />
+                        <InputRightElement pointerEvents="none" color="gray.500">
+                          €
+                        </InputRightElement>
+                      </InputGroup>
+                    </Box>
+                    <Box>
+                      <FieldTitle title="Data" />
+                      <SingleDatepicker
+                        name="date-input"
+                        date={
+                          editedIntervento.date
+                            ? timestampToDate(editedIntervento.date)
+                            : new Date()
+                        }
+                        onDateChange={(date) =>
+                          setEditedIntervento((prev) => ({
+                            ...prev,
+                            date: {
+                              seconds: Math.floor(date.getTime() / 1000),
+                              nanoseconds: (date.getTime() % 1000) * 1000000,
+                            },
+                          }))
+                        }
+                        configs={{
+                          dateFormat: "yyyy-MM-dd",
+                          dayNames: "Dom,Lun,Mar,Mer,Gio,Ven,Sab".split(","), // length of 7
+                          monthNames:
+                            "Gen,Feb,Mar,Apr,Mag,Giu,Lug,Ago,Set,Ott,Nov,Dec".split(
+                              ","
+                            ), // length of 12
+                          firstDayOfWeek: 1, // default is 0, the dayNames[0], which is Sunday if you don't specify your own dayNames,
+                        }}
+                        propsConfigs={{
+                          triggerBtnProps: {
+                            fontSize: "md",
+                          },
+                          dateNavBtnProps: {
+                            colorScheme: "blue",
+                            variant: "outline",
+                          },
+                          dayOfMonthBtnProps: {
+                            defaultBtnProps: {
+                              _hover: {
+                                background: "blue.400",
+                                color: "black",
+                              },
+                            },
+                            selectedBtnProps: {
+                              background: "blue.200",
+                              color: "black",
+                            },
+                            todayBtnProps: {
+                              background: "#4681ac",
+                            },
+                          },
+                        }}
+                      />
+                    </Box>
+                  </Grid>
+                </ModalBody>
+                <ModalFooter>
+                  <Button
+                    colorScheme="green"
+                    mr={3}
+                    onClick={handleSubmitInterventi}
+                  >
+                    Modifica
+                  </Button>
+                  <Button variant="ghost" onClick={onCloseEditInterventi}>
+                    Cancella
+                  </Button>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
             <Grid
               templateColumns={["repeat(1, 1fr)", "repeat(5, 1fr)"]}
               gap={4}
@@ -522,62 +901,79 @@ const EditPage = () => {
                 {pezzi.map((item: any, idx: number) => {
                   //console.log(item)
                   return (
-                    <Grid
-                      key={idx}
-                      templateColumns={["repeat(1, 1fr)", "repeat(4, 1fr)"]}
-                      gap={6}
-                      mt={4}
-                      border="1px solid grey"
-                      p={4}
-                      borderRadius="md"
-                    >
-                      <Input
-                        value={item.name}
-                        onChange={(e) =>
-                          handleChangePezzi(e.target.value, "name", idx)
-                        }
-                        placeholder="Nome Pezzo"
-                        type="text"
-                      />
-                      <Select
-                        value={item.qta}
-                        onChange={(e) =>
-                          handleChangePezzi(
-                            parseInt(e.target.value),
-                            "qta",
-                            idx
-                          )
-                        }
+                    <Box key={idx} position="relative" p={4} mt={-5}>
+                      <Grid
+                        key={idx}
+                        templateColumns={["repeat(1, 1fr)", "repeat(5, 1fr)"]}
+                        gap={6}
+                        mt={4}
+                        border="1px solid grey"
+                        p={4}
+                        borderRadius="md"
                       >
-                        <option value={0} selected disabled>
-                          0
-                        </option>
-                        {Array.from({ length: 48 }, (_, i) => {
-                          const value = i + 1;
-                          return <option value={value}>{value}</option>;
-                        })}
-                      </Select>
-                      <Input
-                        value={item.price}
-                        onChange={(e) =>
-                          handleChangePezzi(
-                            parseInt(e.target.value),
-                            "price",
-                            idx
-                          )
-                        }
-                        placeholder="Prezzo"
-                        type="number"
-                      />
-                      <Input
-                        value={item.fornitor}
-                        onChange={(e) =>
-                          handleChangePezzi(e.target.value, "fornitor", idx)
-                        }
-                        placeholder="Fornitore"
-                        type="text"
-                      />
-                    </Grid>
+                        <Input
+                          value={item.name}
+                          onChange={(e) =>
+                            handleChangePezzi(e.target.value, "name", idx)
+                          }
+                          placeholder="Nome Pezzo"
+                          type="text"
+                        />
+                        <Select
+                          value={item.qta}
+                          onChange={(e) =>
+                            handleChangePezzi(
+                              parseInt(e.target.value),
+                              "qta",
+                              idx
+                            )
+                          }
+                        >
+                          <option value={0} selected disabled>
+                            0
+                          </option>
+                          {Array.from({ length: 48 }, (_, i) => {
+                            const value = i + 1;
+                            return <option value={value}>{value}</option>;
+                          })}
+                        </Select>
+                        <InputGroup>
+                          <Input
+                            value={item.price}
+                            onChange={(e) =>
+                              handleChangePezzi(
+                                parseInt(e.target.value),
+                                "price",
+                                idx
+                              )
+                            }
+                            placeholder="Prezzo"
+                            type="number"
+                          />
+                          <InputRightElement pointerEvents="none" color="gray.500">
+                            €
+                          </InputRightElement>
+                        </InputGroup>
+                        <Input
+                          value={item.fornitor}
+                          onChange={(e) =>
+                            handleChangePezzi(e.target.value, "fornitor", idx)
+                          }
+                          placeholder="Fornitore"
+                          type="text"
+                        />
+                      </Grid>
+                      <Button
+                        size="sm"
+                        colorScheme="red"
+                        position="absolute"
+                        top="52px"
+                        right="28px"
+                        onClick={() => handleRemovePezzo(idx)}
+                      >
+                        X
+                      </Button>
+                    </Box>
                   );
                 })}
                 <Flex justifyContent="center" mt={4}>
@@ -623,14 +1019,19 @@ const EditPage = () => {
                       </Box>
                       <Box>
                         <FieldTitle title="Prezzo" />
-                        <Input
-                          value={newPezzi.price}
-                          onChange={(e) =>
-                            handleInputChangePezzi("price", e.target.value)
-                          }
-                          placeholder="Prezzo"
-                          type="number"
-                        />
+                        <InputGroup>
+                          <Input
+                            value={newPezzi.price}
+                            onChange={(e) =>
+                              handleInputChangePezzi("price", e.target.value)
+                            }
+                            placeholder="Prezzo"
+                            type="number"
+                          />
+                          <InputRightElement pointerEvents="none" color="gray.500">
+                            €
+                          </InputRightElement>
+                        </InputGroup>
                       </Box>
                       <Box>
                         <FieldTitle title="Fornitore" />
@@ -667,76 +1068,92 @@ const EditPage = () => {
                 {acconti.map((item: any, idx: number) => {
                   //console.log(item)
                   return (
-                    <Grid
-                      key={idx}
-                      templateColumns={["repeat(1, 1fr)", "repeat(3, 1fr)"]}
-                      gap={6}
-                      mt={4}
-                      border="1px solid grey"
-                      p={4}
-                      borderRadius="md"
-                    >
-                      <Input
-                        value={item.payment}
-                        onChange={(e) =>
-                          handleChangeAcconti(e.target.value, "payment", idx)
-                        }
-                        placeholder="Tipo di pagamento"
-                        type="text"
-                      />
-                      <Input
-                        value={item.amount}
-                        onChange={(e) =>
-                          handleChangeAcconti(
-                            parseInt(e.target.value),
-                            "amount",
-                            idx
-                          )
-                        }
-                        placeholder="Acconto in €"
-                        type="number"
-                      />
-                      <SingleDatepicker
-                        name="date-input"
-                        date={timestampToDate(item.date)}
-                        onDateChange={(date) =>
-                          handleChangeDate(date, "date", idx)
-                        }
-                        configs={{
-                          dateFormat: "yyyy-MM-dd",
-                          dayNames: "Dom,Lun,Mar,Mer,Gio,Ven,Sab".split(","), // length of 7
-                          monthNames:
-                            "Gen,Feb,Mar,Apr,Mag,Giu,Lug,Ago,Set,Ott,Nov,Dec".split(
-                              ","
-                            ), // length of 12
-                          firstDayOfWeek: 1, // default is 0, the dayNames[0], which is Sunday if you don't specify your own dayNames,
-                        }}
-                        propsConfigs={{
-                          triggerBtnProps: {
-                            fontSize: "md",
-                          },
-                          dateNavBtnProps: {
-                            colorScheme: "blue",
-                            variant: "outline",
-                          },
-                          dayOfMonthBtnProps: {
-                            defaultBtnProps: {
-                              _hover: {
-                                background: "blue.400",
+                    <Box key={idx} position="relative" p={4} mt={-5}>
+                      <Grid
+                        key={idx}
+                        templateColumns={["repeat(1, 1fr)", "repeat(4, 1fr)"]}
+                        gap={6}
+                        mt={4}
+                        border="1px solid grey"
+                        p={4}
+                        borderRadius="md"
+                      >
+                        <Select
+                          value={item.payment}
+                          onChange={(e) => handleChangeAcconti(e.target.value, "payment", idx)}
+                        >
+                          <option value="Contanti">Contanti</option>
+                          <option value="Bancomat">Bancomat</option>
+                        </Select>
+                        <InputGroup>
+                          <Input
+                            value={item.amount}
+                            onChange={(e) =>
+                              handleChangeAcconti(
+                                parseInt(e.target.value),
+                                "amount",
+                                idx
+                              )
+                            }
+                            placeholder="Acconto in €"
+                            type="number"
+                          />
+                          <InputRightElement pointerEvents="none" color="gray.500">
+                            €
+                          </InputRightElement>
+                        </InputGroup>
+                        <SingleDatepicker
+                          name="date-input"
+                          date={timestampToDate(item.date)}
+                          onDateChange={(date) =>
+                            handleChangeDate(date, "date", idx)
+                          }
+                          configs={{
+                            dateFormat: "yyyy-MM-dd",
+                            dayNames: "Dom,Lun,Mar,Mer,Gio,Ven,Sab".split(","), // length of 7
+                            monthNames:
+                              "Gen,Feb,Mar,Apr,Mag,Giu,Lug,Ago,Set,Ott,Nov,Dec".split(
+                                ","
+                              ), // length of 12
+                            firstDayOfWeek: 1, // default is 0, the dayNames[0], which is Sunday if you don't specify your own dayNames,
+                          }}
+                          propsConfigs={{
+                            triggerBtnProps: {
+                              fontSize: "md",
+                            },
+                            dateNavBtnProps: {
+                              colorScheme: "blue",
+                              variant: "outline",
+                            },
+                            dayOfMonthBtnProps: {
+                              defaultBtnProps: {
+                                _hover: {
+                                  background: "blue.400",
+                                  color: "black",
+                                },
+                              },
+                              selectedBtnProps: {
+                                background: "blue.200",
                                 color: "black",
                               },
+                              todayBtnProps: {
+                                background: "#4681ac",
+                              },
                             },
-                            selectedBtnProps: {
-                              background: "blue.200",
-                              color: "black",
-                            },
-                            todayBtnProps: {
-                              background: "#4681ac",
-                            },
-                          },
-                        }}
-                      />
-                    </Grid>
+                          }}
+                        />
+                      </Grid>
+                      <Button
+                        size="sm"
+                        colorScheme="red"
+                        position="absolute"
+                        top="52px"
+                        right="28px"
+                        onClick={() => handleRemoveAcconto(idx)}
+                      >
+                        X
+                      </Button>
+                    </Box>
                   );
                 })}
                 <Flex justifyContent="center" mt={4}>
@@ -754,28 +1171,37 @@ const EditPage = () => {
                     <Grid templateColumns="repeat(1, 1fr)" gap={4}>
                       <Box>
                         <FieldTitle title="Tipo pagamento" />
-                        <Input
+                        <Select
                           value={newAcconto.payment}
                           onChange={(e) =>
-                            handleInputChange("payment", e.target.value)
-                          }
-                          placeholder="Tipo di pagamento"
-                          type="text"
-                        />
+                            setNewAcconto((prev) => ({
+                              ...prev,
+                              payment: e.target.value,
+                            }))
+                          } // Correctly update the "payment" field
+                        >
+                          <option value="Contanti">Contanti</option>
+                          <option value="Bancomat">Bancomat</option>
+                        </Select>
                       </Box>
                       <Box>
                         <FieldTitle title="Acconto" />
-                        <Input
-                          value={newAcconto.amount}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "amount",
-                              parseFloat(e.target.value)
-                            )
-                          }
-                          placeholder="Acconto in €"
-                          type="number"
-                        />
+                        <InputGroup>
+                          <Input
+                            value={newAcconto.amount}
+                            onChange={(e) =>
+                              handleInputChange(
+                                "amount",
+                                parseFloat(e.target.value)
+                              )
+                            }
+                            placeholder="Acconto in €"
+                            type="number"
+                          />
+                          <InputRightElement pointerEvents="none" color="gray.500">
+                            €
+                          </InputRightElement>
+                        </InputGroup>
                       </Box>
                       <Box>
                         <FieldTitle title="Data pagamento" />

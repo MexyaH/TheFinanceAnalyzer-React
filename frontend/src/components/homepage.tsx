@@ -28,6 +28,7 @@ interface Record {
   dateMod: Date;
   tecnico: string;
   veicolo: any;
+  interventi: any;
 }
 
 const Homepage: React.FC = () => {
@@ -110,10 +111,25 @@ const Homepage: React.FC = () => {
       //editable: true,
     },
     {
-      field: 'titolo',
-      headerName: 'Intervento',
+      field: 'interventi',
+      headerName: 'Interventi',
       headerClassName: 'super-app-theme--header',
-      width: 500
+      width: 500,
+      renderCell(params) {
+        console.log(params)
+        const obj = params.row.interventi;
+        let string = ""
+        obj.map((item: any, idx: number) => {
+          const title = item.title.charAt(0).toUpperCase() + item.title.slice(1)
+          if(idx >= obj.length - 1){
+            string += title
+          } else {
+            string += title + ', '
+          }
+            
+        })
+        return string
+      },
     }, 
     {
       field: 'veicoloMarca',
