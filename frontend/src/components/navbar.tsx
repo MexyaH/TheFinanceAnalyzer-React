@@ -1,7 +1,7 @@
 import {
     Box, Button, Flex, IconButton,
     Spacer, useColorMode, useColorModeValue,
-    Avatar,Image,
+    Avatar,
     Heading
 } from "@chakra-ui/react";
 import { useContext } from "react";
@@ -11,12 +11,11 @@ import AuthContext from '../context/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase'; // import auth from your firebase configuration file
 import UserContext from "../context/userContext";
-import { BsPersonAdd } from "react-icons/bs";
 import { FaHome } from "react-icons/fa";
 import { FaUsersGear } from "react-icons/fa6";
 import { IoMdAdd } from "react-icons/io";
 import ModalVersion from "./ModalVersion";
-import logo from "../assets/autotecnica_botti_logo_completo_nosfondo_bianco.png";
+//import logo from "../assets/autotecnica_botti_logo_completo_nosfondo_bianco.png";
 interface NavbarProps {
 }
 //const db = getDatabase(firebaseApp);
@@ -46,16 +45,8 @@ const Navbar: React.FC<NavbarProps> = ({ }) => {
         <Flex as="nav" align="center" justify="space-between" wrap="wrap" padding="1rem" bg={bgColor} color={textColor}>
             {/* <Text>{currentDisplayName}</Text> */}
             <Flex justifyContent="center" alignItems="center" mb={3}>
-                        <Image 
-                            src={logo} // Image URL
-                            alt="Description of image" 
-                            width="100%"   // Sets the width; height will adjust proportionally
-                            maxWidth="150px" // Example of restricting the width
-                            borderRadius="md"  // Optional: Adds rounded corners
-                            objectFit="cover"  // Optional: Controls how the image should fit within the container
-                        />
-                        <Heading size="lg"> Assistance</Heading>
-                    </Flex>
+                <Heading size="lg"> Personal Home-Banking</Heading>
+            </Flex>
             <Spacer />
             {/* Navigation button */}
             <IconButton
@@ -72,14 +63,6 @@ const Navbar: React.FC<NavbarProps> = ({ }) => {
                 colorScheme="red"
                 icon={<IoMdAdd />}
                 onClick={() => navigate('/addAssistance')}
-                ml={4}
-            />
-            <IconButton
-                aria-label="form"
-                variant="outline"
-                colorScheme="red"
-                icon={<BsPersonAdd />}
-                onClick={() => navigate('/addClient')}
                 ml={4}
             />
             {actualRole === 99 ? 

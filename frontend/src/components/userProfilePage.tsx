@@ -1,12 +1,12 @@
 import React, { useContext, useState } from 'react';
 import { auth } from '../firebase'; // Import your Firebase configuration
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { Image, Heading, Box, Button, Flex, FormControl, Input, Text, Grid } from "@chakra-ui/react";
+import { Heading, Box, Button, Flex, FormControl, Input, Text, Grid } from "@chakra-ui/react";
 import Navbar from './navbar';
 import { doc, setDoc } from 'firebase/firestore';
 import { firestore } from '../firebase'; // import firestore from your firebase configuration file
 import { useCustomToast } from './showToast';
-import logo from "../assets/autotecnica_botti_logo_completo_nosfondo_bianco.png";
+//import logo from "../assets/autotecnica_botti_logo_completo_nosfondo_bianco.png";
 import UserContext from "../context/userContext";
 
 const UserProfilePage: React.FC = () => {
@@ -78,7 +78,7 @@ const UserProfilePage: React.FC = () => {
         <Navbar />
         <Box border="1px solid grey" p={4} borderRadius="md">
           <Flex justifyContent="center" alignItems="center" mb={3}>
-            <Image src={logo} boxSize="50px" mr={2} />
+            {/*<Image src={logo} boxSize="50px" mr={2} />*/}
             <Heading size="lg">User Profile</Heading>
           </Flex>
 

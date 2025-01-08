@@ -1,6 +1,6 @@
-import { Box, Button, Flex, Heading, Image, Input } from "@chakra-ui/react";
+import { Box, Button, Flex, Heading, Input } from "@chakra-ui/react";
 import React, { useState, useContext } from 'react';
-import logo from "../assets/autotecnica_botti_logo_completo_nosfondo_bianco.png";
+//import logo from "../assets/autotecnica_botti_logo_completo_nosfondo_bianco.png";
 import AuthContext from "../context/AuthContext";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { setPersistence, browserLocalPersistence } from "firebase/auth";
@@ -38,8 +38,7 @@ const LoginPage: React.FC = () => {
         <Flex height="100vh" alignItems="center" justifyContent="center">
             <Box as="form" onSubmit={handleSubmit} p={8} maxWidth="500px" borderWidth={1} borderRadius={8} boxShadow="lg" border="1px solid grey">
                 <Flex alignItems="center" justifyContent="center">
-                    <Image src={logo} maxWidth="150px" mr={4} />
-                    <Heading size="lg">Assistance</Heading>
+                    <Heading size="lg">Personal Home-Banking</Heading>
                 </Flex>
                 <Box my={4} textAlign="center">
                     <Heading mt={2} mb={3}>Login</Heading>

@@ -1,19 +1,10 @@
 import React, { useState, useEffect } from 'react';
-//import AuthContext from './context/AuthContext';
 import { BrowserRouter as Router, useNavigate, useRoutes } from 'react-router-dom';
 import LoginPage from './components/login'
 import HomePage from './components/homepage';
-import AddRecord from './components/addRecord';
-import AddClient from './components/addClient';
-import DetailsPage from './components/details';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react'
 import { Spinner } from '@chakra-ui/react';
-//import './App.css'
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import UserProfilePage from './components/userProfilePage';
-import EditPage from './components/edit';
-import AdminMan from './components/AdminMan';
-//import EditUser from './components/EditUser';
 
 const RoutesComponent = () => {
   const navigate = useNavigate();
@@ -38,15 +29,6 @@ const RoutesComponent = () => {
   const element = useRoutes([
     { path: '/login', element: <LoginPage /> },
     { path: '/', element: <HomePage /> },
-    { path: '/addAssistance', element: <AddRecord /> },
-    { path: '/addClient', element: <AddClient /> },
-    { path: '/profile', element: <UserProfilePage /> },
-    { path: '/show/:id', element: <DetailsPage /> },
-    { path: '/edit/:id', element: <EditPage /> },
-    // { path: '/filemanager', element: <FilesManager /> }, // Use the imported component
-    { path: '/userman', element: <AdminMan /> },
-    // { path: '/backup', element: <Backup /> },
-    //{ path: '/edituser/:id', element: <EditUser /> },
   ]);
 
   return isLogged ? element : <LoginPage />;

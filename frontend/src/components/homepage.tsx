@@ -1,304 +1,445 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { firestore } from '../firebase'; // import auth from your firebase configuration file
-import { collection, deleteDoc, getDocs, query, Timestamp, where } from 'firebase/firestore';
-import DataGridTable from './Table';
-import Navbar from './navbar';
-import { Box, Button, Flex, IconButton, useDisclosure } from '@chakra-ui/react';
-import { GridColDef } from '@mui/x-data-grid';
-import { MdDelete, MdEdit, MdSearch } from "react-icons/md";
-import { useCustomToast } from './showToast';
+import React, { useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { firestore } from "../firebase"; // import auth from your firebase configuration file
 import {
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogOverlay,
-} from '@chakra-ui/react'
-import UserContext from "../context/userContext";
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  Timestamp,
+  where,
+} from "firebase/firestore";
+import DataGridTable from "./Table";
+import Navbar from "./navbar";
+import { format } from "date-fns";
+import {
+  Box,
+  Button,
+  Flex,
+  IconButton,
+  Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Select,
+  Spinner,
+  Table,
+  TableCaption,
+  TableContainer,
+  Tbody,
+  Td,
+  Tfoot,
+  Th,
+  Thead,
+  Tr,
+  useDisclosure,
+} from "@chakra-ui/react";
+import { CircularProgress, CircularProgressLabel } from "@chakra-ui/react";
+import {
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
+  StatArrow,
+  StatGroup,
+} from "@chakra-ui/react";
+import { useCustomToast } from "./showToast";
 
-interface Record {
-  id: string;
-  status: number;
-  commessa: string;
-  cliente: string;
-  macchina: string;
-  date: Date;
-  dateMod: Date;
-  tecnico: string;
-  veicolo: any;
-  interventi: any;
+/*interface RawRecords{
+  outcome: Expence[],
+  income: Income[]
 }
 
+interface Expence{
+  label: string,
+  currency: string,
+  amount: number,
+  merchant: string,
+  date: Date,
+  category: string
+}
+
+interface Income{
+  label: string,
+  currency: string,
+  amount: number,
+  date: Date,
+  category: string
+}*/
+
 const Homepage: React.FC = () => {
-  const navigate = useNavigate();
-  const [notYours, setNotYours] = useState(false); // [true, false]
-  const { actualName, actualSurname, actualRole} = useContext(UserContext);
-  const { showErrorToast, showSuccessToast } = useCustomToast();
-  const [records, setRecords] = useState<Record[]>([]);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
-  const cancelRef = React.useRef<any>(null);
-  const openModal = (record: Record) => {
-    setSelectedRecord(record);
-    //console.log(record)
-    onOpen();
-  };
+  const [rawRecords, setRawRecords] = useState<any>();
+  const [balanceIncome, setBalanceIncome] = useState<any>(null);
+  const [balanceOutcome, setBalanceOutcome] = useState<any>(null);
+  const [file, setFile] = useState(null)
+  const [dataExtrapolated, setDataExtrapolated] = useState([])
+  const {
+    isOpen: isOpenAddMonthlyExpence,
+    onOpen: onOpenAddMonthlyExpence,
+    onClose: onCloseAddMonthlyExpence,
+  } = useDisclosure();
 
-  const closeModal = () => {
-    setSelectedRecord(null);
-    onClose();
-  };
-
-  const deleteRecord = async () => {
-    if (selectedRecord) {
-      const q = query(collection(firestore, "records"), where("id", "==", selectedRecord.id));
-
-      const querySnapshot = await getDocs(q);
-
-      querySnapshot.forEach(async (doc) => {
-        try {
-          await deleteDoc(doc.ref);
-          showSuccessToast(`The Record has been deleted.`);
-        } catch (error) {
-          showErrorToast("Error deleting record: " + error);
-        }
-      });
-
-      fetchRecords();
-      closeModal();
-    }
-  };
+  const [isLoading, setIsLoading] = useState(true);
+  const [incomePercentageChange, setIncomePercentageChange] =
+    useState<any>(null);
+  const [outcomePercentageChange, setOutcomePercentageChange] =
+    useState<any>(null);
+  const [savingPercentageChange, setSavingPercentageChange] =
+    useState<any>(null);
 
   const fetchRecords = async () => {
-    const recordsCollection = collection(firestore, 'operazioni');
-    const recordsDocs = await getDocs(recordsCollection);
-    const fetchedRecords: any[] = [];
-    recordsDocs.forEach((doc) => {
-      const data = doc.data();
-      fetchedRecords.push(data);
-    });
-    setRecords(fetchedRecords);
-    console.log(fetchedRecords)
+    const recordsCollection = collection(firestore, "transaction");
+    const currentDate = new Date();
+
+    const lastThreeMonths = [
+      format(
+        new Date(currentDate.setMonth(currentDate.getMonth() - 1)),
+        "yyyy-MM"
+      ),
+      format(
+        new Date(currentDate.setMonth(currentDate.getMonth() - 1)),
+        "yyyy-MM"
+      ),
+      format(
+        new Date(currentDate.setMonth(currentDate.getMonth() - 1)),
+        "yyyy-MM"
+      ),
+    ];
+
+    const previousThreeMonths = [
+      format(
+        new Date(currentDate.setMonth(currentDate.getMonth() - 1)),
+        "yyyy-MM"
+      ),
+      format(
+        new Date(currentDate.setMonth(currentDate.getMonth() - 1)),
+        "yyyy-MM"
+      ),
+      format(
+        new Date(currentDate.setMonth(currentDate.getMonth() - 1)),
+        "yyyy-MM"
+      ),
+    ];
+
+    const fetchDataForMonths = async (months: string[]) => {
+      const records = await Promise.all(
+        months.map(async (month) => {
+          const docRef = doc(recordsCollection, month);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            //console.log(`Data for ${month}:`, data); // Log the fetched data
+            return { month, ...data };
+          } else {
+            //console.log(`No data found for month: ${month}`);
+            return null;
+          }
+        })
+      );
+
+      return records.filter((record) => record !== null);
+    };
+
+    const lastThreeRecords = await fetchDataForMonths(lastThreeMonths);
+    const previousThreeRecords = await fetchDataForMonths(previousThreeMonths);
+
+    const calculateTotals = (records: any[]) => {
+      let totalIncome = 0.0;
+      let totalOutcome = 0.0;
+
+      records.forEach((record) => {
+        record.income?.forEach((item: any) => {
+          //console.log('Income item:', item);
+          totalIncome += item.amount || 0;
+        });
+        record.outcome?.forEach((item: any) => {
+          //console.log('Outcome item:', item);
+          totalOutcome += item.amount || 0;
+        });
+      });
+
+      //console.log('Calculated Totals - Income:', totalIncome, 'Outcome:', totalOutcome);
+      return { totalIncome, totalOutcome, savings: totalIncome - totalOutcome };
+    };
+
+    const lastThreeTotals = calculateTotals(lastThreeRecords);
+    const previousThreeTotals = calculateTotals(previousThreeRecords);
+
+    const calculatePercentageChange = (current: number, previous: number) => {
+      if (previous === 0) return 0;
+      return ((current - previous) / previous) * 100;
+    };
+
+    const incomePercentageChange = calculatePercentageChange(
+      lastThreeTotals.totalIncome,
+      previousThreeTotals.totalIncome
+    );
+
+    const outcomePercentageChange = calculatePercentageChange(
+      lastThreeTotals.totalOutcome,
+      previousThreeTotals.totalOutcome
+    );
+
+    const savingsPercentageChange = calculatePercentageChange(
+      lastThreeTotals.savings,
+      previousThreeTotals.savings
+    );
+
+    setBalanceIncome(lastThreeTotals.totalIncome || 0);
+    setBalanceOutcome(lastThreeTotals.totalOutcome || 0);
+    setRawRecords(lastThreeRecords);
+    setIncomePercentageChange(incomePercentageChange);
+    setOutcomePercentageChange(outcomePercentageChange);
+    setSavingPercentageChange(savingsPercentageChange);
+    //console.log('Balance Income set to:', lastThreeTotals.totalIncome);
+  };
+
+  const fetchAll = async () => {
+    await fetchRecords();
   };
 
   useEffect(() => {
-    // Fetch records from Firestore database
-    fetchRecords();
+    setIsLoading(true);
+    fetchAll();
+    setIsLoading(false);
   }, []);
 
-  const formatDate = (timestamp: Timestamp) => {
-    const date = timestamp.toDate();
-    console.log(date)
-    return new Intl.DateTimeFormat('it-IT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
+  console.log(rawRecords);
+
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <Spinner
+          thickness="4px"
+          speed="0.65s"
+          color="#d9e70c"
+          size="xl"
+          style={{ marginBottom: "20px" }}
+        />
+        <p>Loading... Please wait</p>
+      </div>
+    );
+  }
+
+  const handleFileChange = (event: any) => {
+    setFile(event.target.files[0]);
   };
 
-  const actualNameSurname = actualName + " " + actualSurname;
+  const handleUpload = async () => {
+    if (!file) {
+      alert("Please select a file first!");
+      return;
+    }
 
-  const columns: GridColDef<Record>[] = [
-    {
-      field: 'nomeCliente',
-      headerName: 'Cliente',
-      headerClassName: 'super-app-theme--header',
-      //width: 150,
-      //editable: true,
-    },
-    {
-      field: 'interventi',
-      headerName: 'Interventi',
-      headerClassName: 'super-app-theme--header',
-      width: 500,
-      renderCell(params) {
-        console.log(params)
-        const obj = params.row.interventi;
-        let string = ""
-        obj.map((item: any, idx: number) => {
-          const title = item.title.charAt(0).toUpperCase() + item.title.slice(1)
-          if(idx >= obj.length - 1){
-            string += title
-          } else {
-            string += title + ', '
-          }
-            
-        })
-        return string
-      },
-    }, 
-    {
-      field: 'veicoloMarca',
-      headerName: 'Marca Veicolo',
-      headerClassName: 'super-app-theme--header',
-      width: 200,
-      renderCell(params) {
-        console.log(params)
-        return params.row.veicolo.marca;
-        
-      },
-      //editable: true,
-    },
-    {
-      field: 'veicoloModello',
-      headerName: 'Modello Veicolo',
-      headerClassName: 'super-app-theme--header',
-      //type: 'number',
-      width: 150,
-      renderCell(params) {
-        console.log(params)
-        return params.row.veicolo.modello;        
-      },
-      //editable: true,
-    },
-    {
-      field: 'dataInizio',
-      headerName: 'Data inizio int.',
-      headerClassName: 'super-app-theme--header',
-      width: 150,
-      renderCell(params) {
-        return formatDate(params.value)
-      },
-      //editable: true,
-    },
-    {
-      field: 'stato',
-      headerName: 'Stato',
-      headerClassName: 'super-app-theme--header',
-      width: 50,
-      renderCell(params) {
-        console.log(params.value)
-        if (params.value.completed === true){
-          return '🟢'
-        }else if (params.value.standby){
-          return '🟡'
-        }else if (params.value.problem){
-          return '🟠'
-        }else if (params.value.inCorso){
-          return '🔵'
-        }else if (params.value.canceled){
-          return '🔴'
-        }
-        // switch 
-      },
-      //editable: true,
-    },
-    {
-      field: 'edit',
-      headerName: '',
-      headerClassName: 'super-app-theme--header',
-      sortable: false,
-      width: 10,
-      renderCell: (params) => {
-        const onClick = () => {
-          const id = params.row.id;
-          navigate('/edit/' + id, { state: { record: params.row } });
-        };
-        
-        // Check if the content of the row is equal to something
-        if (params.row.tecnico === (actualName + " " + actualSurname)) {
-          return (
-            <IconButton aria-label="edit" onClick={onClick}>
-              <MdEdit size={"25px"} style={{ verticalAlign: 'middle', textAlign: 'center' }} />
-            </IconButton>
-          );
-        }
-        if (actualRole == 99) {
-          return (
-            <IconButton aria-label="edit" onClick={onClick}>
-              <MdEdit size={"25px"} style={{ verticalAlign: 'middle', textAlign: 'center', color:'red' }} />
-            </IconButton>
-          );
-        }
-        
-        // Return null or an empty element if the condition is not met
-        return null;
-      },
-    },
-    {
-      field: 'show',
-      headerName: '',
-      headerClassName: 'super-app-theme--header',
-      sortable: false,
-      width: 10,
-      renderCell: (params) => {
-        const onClick = () => {
-          const id = params.row.id;
-          navigate('/show/' + id, { state: { record: params.row } });
-        };
+    const formData = new FormData();
+    formData.append('file', file);
 
-        return (
-          <IconButton aria-label="show" onClick={onClick}>
-            <MdSearch size={"25px"} style={{ verticalAlign: 'middle', textAlign: 'center' }} />
-          </IconButton>
-        );
-      },
-    },
-    {
-      field: 'delete',
-      headerName: '',
-      headerClassName: 'super-app-theme--header',
-      sortable: false,
-      width: 10,
-      renderCell: (params) => {
-        if (params.row.tecnico === actualNameSurname || actualRole === 99) {
-          return (
-            <IconButton aria-label="edit" onClick={() => {openModal(params.row); setNotYours(true)}} style={{ color: params.row.tecnico != actualNameSurname ? '#ff0000' : 'inherit' }}>
-              <MdDelete size={"25px"} style={{ verticalAlign: 'middle', textAlign: 'center' }} />
-            </IconButton>
-          );
-        }
-        //console.log(params.row.tecnico)
-        
-        // Return null or an empty element if the condition is not met
-        return null;
-      },
-    },
-  ];
-  //console.log(records)
+    try {
+      const response = await fetch("http://localhost:5000/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error:", errorData);
+        alert(errorData.error);
+        return;
+      }
+
+      const data = await response.json();
+      setDataExtrapolated(data)
+
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("Failed to upload file");
+    }
+  };
+
   return (
     <Flex justifyContent="center" minHeight="100vh">
-      <Box >
+      <Box width={"100%"}>
         <Navbar />
-        <DataGridTable rows={records} columns={columns} />
-        <AlertDialog
-          isOpen={isOpen}
-          leastDestructiveRef={cancelRef}
-          onClose={onClose}
-        >
-          <AlertDialogOverlay>
-            <AlertDialogContent>
-              <AlertDialogHeader fontSize='lg' fontWeight='bold' style={{ textAlign: 'center' }}>
-                Cancella assistenza
-              </AlertDialogHeader>
+        <Box padding={10}>
+          <Flex justify="space-between" align="center">
+            {/* Left content with CircularProgress */}
+            <Box width={"50%"}>
+              <CircularProgress
+                isIndeterminate={rawRecords == undefined}
+                value={
+                  rawRecords != undefined && balanceIncome != null
+                    ? balanceIncome
+                    : undefined
+                }
+                max={balanceIncome + balanceOutcome}
+                color={rawRecords != undefined ? "green.500" : " gray.400"}
+                thickness="10px"
+                size={200}
+              >
+                <CircularProgressLabel>
+                  <StatGroup>
+                    <Stat>
+                      <StatLabel>Entrate</StatLabel>
+                      <StatNumber>
+                        {balanceIncome && balanceIncome.toFixed(2)} €
+                      </StatNumber>
+                      <StatHelpText>
+                        <StatArrow type="increase" />
+                        {Math.abs(incomePercentageChange).toFixed(2)}%
+                      </StatHelpText>
+                    </Stat>
+                  </StatGroup>
+                </CircularProgressLabel>
+              </CircularProgress>
+              <CircularProgress
+                isIndeterminate={rawRecords == undefined}
+                value={
+                  rawRecords != undefined && balanceOutcome != null
+                    ? balanceOutcome
+                    : undefined
+                }
+                color={rawRecords != undefined ? "red.500" : " gray.400"}
+                max={balanceIncome + balanceOutcome}
+                thickness="10px"
+                size={200}
+              >
+                <CircularProgressLabel>
+                  <StatGroup>
+                    <Stat>
+                      <StatLabel>Uscite</StatLabel>
+                      <StatNumber>
+                        {balanceIncome && balanceOutcome.toFixed(2)} €
+                      </StatNumber>
+                      <StatHelpText>
+                        <StatArrow type="decrease" />
+                        {Math.abs(outcomePercentageChange).toFixed(2)}%
+                      </StatHelpText>
+                    </Stat>
+                  </StatGroup>
+                </CircularProgressLabel>
+              </CircularProgress>
+              <CircularProgress
+                isIndeterminate={rawRecords == undefined}
+                value={
+                  rawRecords != undefined &&
+                  balanceOutcome != null &&
+                  balanceIncome != null
+                    ? balanceIncome - balanceOutcome
+                    : undefined
+                }
+                color={rawRecords != undefined ? "blue.500" : " gray.400"}
+                max={balanceIncome + balanceOutcome}
+                thickness="10px"
+                size={200}
+              >
+                <CircularProgressLabel>
+                  <StatGroup>
+                    <Stat>
+                      <StatLabel>Risparmio</StatLabel>
+                      <StatNumber>
+                        {balanceIncome &&
+                          balanceOutcome &&
+                          (balanceIncome - balanceOutcome).toFixed(2)}{" "}
+                        €
+                      </StatNumber>
+                      <StatHelpText>
+                        <StatArrow
+                          type={
+                            savingPercentageChange < 0 ? "decrease" : "increase"
+                          }
+                        />
+                        {Math.abs(savingPercentageChange).toFixed(2)}%
+                      </StatHelpText>
+                    </Stat>
+                  </StatGroup>
+                </CircularProgressLabel>
+              </CircularProgress>
+            </Box>
 
-              <AlertDialogBody style={{ textAlign: 'center' }}>
-                Sei sicuro?<br />
-                Non puoi tornare indietro!!.<br />
-                {notYours == true ? 'P.S. Questa manutenzione non è stata inserita da te' : ''}
-              </AlertDialogBody>
+            {/* Right content */}
+            <Box padding={10} width={"50%"}>
+              <Button left={"60%"} onClick={() => onOpenAddMonthlyExpence()}>Aggiungi Estratto conto</Button>
+            </Box>
+          </Flex>
+          <Flex justify="space-between" align="center">
+            <Box width={"50%"}></Box>
 
-              <AlertDialogFooter style={{ textAlign: 'center' }}>
-                <>
-                  <Box display="flex" justifyContent="center" width="100%">
-                    <Button ref={cancelRef} onClick={onClose}>
-                      Cancel
-                    </Button>
-                    <Button background='#e53e3e' onClick={deleteRecord} ml={3}>
-                      Delete
-                    </Button>
-                  </Box>
-                </>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
-    </Box>
-    </Flex >
+            <Box width="50%" textAlign="right" mr={20}>
+              <TableContainer w="50%" ml="auto">
+                <Table variant="simple" w="100%" textAlign="center">
+                  <Thead>
+                    <Tr>
+                      <Th textAlign="center">Mese di riferimento inseriti</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {rawRecords &&
+                      rawRecords.map((item: any) => (
+                        <Tr key={Math.floor(Math.random() * 10000)}>
+                          <Td textAlign="center">{item.month}</Td>
+                        </Tr>
+                      ))}
+                  </Tbody>
+                </Table>
+              </TableContainer>
+            </Box>
+          </Flex>
+        </Box>
+      </Box>
+      <Modal isOpen={isOpenAddMonthlyExpence} onClose={onCloseAddMonthlyExpence}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Aggiungi nuovo Estratto conto</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+          <Box mb={4}>
+            <Select placeholder="Seleziona il mese" size="md">
+              <option value="january">Gennaio</option>
+              <option value="february">Febbraio</option>
+              <option value="march">Marzo</option>
+              <option value="april">Aprile</option>
+              <option value="may">Maggio</option>
+              <option value="june">Giugno</option>
+              <option value="july">Luglio</option>
+              <option value="august">Agosto</option>
+              <option value="september">Settembre</option>
+              <option value="october">Ottobre</option>
+              <option value="november">Novembre</option>
+              <option value="december">Dicembre</option>
+            </Select>
+          </Box>
+
+          {/* File Picker */}
+          <Box>
+            <Input type="file" size="md" onChange={handleFileChange}/>
+          </Box>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="green" mr={3} onClick={handleUpload}>
+              Aggiungi
+            </Button>
+            <Button variant="ghost" onClick={onCloseAddMonthlyExpence}>
+              Cancella
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Flex>
   );
 };
 
