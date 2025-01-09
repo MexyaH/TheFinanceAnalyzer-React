@@ -4,7 +4,9 @@ import pandas as pd
 from google.cloud import firestore
 
 app = Flask(__name__)
-CORS(app)
+
+# Allow all origins to access the backend
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 SERVICE_ACCOUNT_KEY_PATH = "/Users/alessandrobondani/Documents/Progetti/Progetti React/FinanceAnalyzer/backend/personal-homebanking-firebase-adminsdk-h4kbi-ad2de5bac3.json"
 

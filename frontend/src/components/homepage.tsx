@@ -74,6 +74,7 @@ interface Income{
 }*/
 
 const Homepage: React.FC = () => {
+  const { showErrorToast, showSuccessToast } = useCustomToast();
   const [rawRecords, setRawRecords] = useState<any>();
   const [balanceIncome, setBalanceIncome] = useState<any>(null);
   const [balanceOutcome, setBalanceOutcome] = useState<any>(null);
@@ -264,10 +265,10 @@ const Homepage: React.FC = () => {
 
       const data = await response.json();
       setDataExtrapolated(data)
+      showSuccessToast("Dati Inseriti")
 
     } catch (error) {
-      console.error("Error uploading file:", error);
-      alert("Failed to upload file");
+      showSuccessToast("Errore: " + error)
     }
   };
 
