@@ -1,24 +1,14 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { firestore } from "../firebase"; // import auth from your firebase configuration file
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  Timestamp,
-  where,
-} from "firebase/firestore";
-import DataGridTable from "./Table";
+import { collection, doc, getDoc } from "firebase/firestore";
 import Navbar from "./navbar";
 import { format } from "date-fns";
 import {
   Box,
   Button,
   Flex,
-  IconButton,
   Input,
   Modal,
   ModalBody,
@@ -30,11 +20,9 @@ import {
   Select,
   Spinner,
   Table,
-  TableCaption,
   TableContainer,
   Tbody,
   Td,
-  Tfoot,
   Th,
   Thead,
   Tr,
@@ -50,6 +38,7 @@ import {
   StatGroup,
 } from "@chakra-ui/react";
 import { useCustomToast } from "./showToast";
+import CustomTooltip from "./customTooltip";
 
 /*interface RawRecords{
   outcome: Expence[],
@@ -75,11 +64,12 @@ interface Income{
 
 const Homepage: React.FC = () => {
   const { showErrorToast, showSuccessToast } = useCustomToast();
+  const navigate = useNavigate();
   const [rawRecords, setRawRecords] = useState<any>();
   const [balanceIncome, setBalanceIncome] = useState<any>(null);
   const [balanceOutcome, setBalanceOutcome] = useState<any>(null);
-  const [file, setFile] = useState(null)
-  const [dataExtrapolated, setDataExtrapolated] = useState([])
+  const [file, setFile] = useState(null);
+  const [topExpenseCategories, setTopExpenseCategories] = useState<any[]>([]);
   const {
     isOpen: isOpenAddMonthlyExpence,
     onOpen: onOpenAddMonthlyExpence,
@@ -193,12 +183,35 @@ const Homepage: React.FC = () => {
       previousThreeTotals.savings
     );
 
+    const calculateTopExpenseCategories = (records: any) => {
+      const categoryTotals = records.reduce((acc: any, record: any) => {
+        record.outcome?.forEach((item: any) => {
+          // Aggregate the amounts by category
+          if (acc[item.category]) {
+            acc[item.category] += item.amount;
+          } else {
+            acc[item.category] = item.amount;
+          }
+        });
+        return acc;
+      }, {});
+
+      // Convert the aggregated totals into an array sorted by total
+      return Object.entries(categoryTotals)
+        .map(([category, total]) => ({ category, total }))
+        .sort((a: any, b: any) => b.total - a.total); // Sort by total in descending order
+    };
+
+    const topCategories = calculateTopExpenseCategories(lastThreeRecords);
+    console.log("Top Expense Categories:", topCategories);
+
     setBalanceIncome(lastThreeTotals.totalIncome || 0);
     setBalanceOutcome(lastThreeTotals.totalOutcome || 0);
     setRawRecords(lastThreeRecords);
     setIncomePercentageChange(incomePercentageChange);
     setOutcomePercentageChange(outcomePercentageChange);
     setSavingPercentageChange(savingsPercentageChange);
+    setTopExpenseCategories(topCategories);
     //console.log('Balance Income set to:', lastThreeTotals.totalIncome);
   };
 
@@ -243,12 +256,12 @@ const Homepage: React.FC = () => {
 
   const handleUpload = async () => {
     if (!file) {
-      alert("Please select a file first!");
+      showErrorToast("Seleziona un file prima di procedere");
       return;
     }
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
     try {
       const response = await fetch("http://localhost:5000/upload", {
@@ -258,17 +271,15 @@ const Homepage: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("Error:", errorData);
-        alert(errorData.error);
+        showErrorToast("Errore: " + errorData.message);
         return;
       }
 
-      const data = await response.json();
-      setDataExtrapolated(data)
-      showSuccessToast("Dati Inseriti")
-
+      //const data = await response.json();
+      //setDataExtrapolated(data);
+      showSuccessToast("Dati Inseriti");
     } catch (error) {
-      showSuccessToast("Errore: " + error)
+      showErrorToast("Errore: " + error);
     }
   };
 
@@ -373,62 +384,106 @@ const Homepage: React.FC = () => {
             </Box>
 
             {/* Right content */}
-            <Box padding={10} width={"50%"}>
-              <Button left={"60%"} onClick={() => onOpenAddMonthlyExpence()}>Aggiungi Estratto conto</Button>
-            </Box>
-          </Flex>
-          <Flex justify="space-between" align="center">
-            <Box width={"50%"}></Box>
+            <Flex justify="space-between" align="center" padding={5} width={'40%'}>
+              {/* Button on the left */}
+              <Box padding={10} width={"10%"}>
+                <Button onClick={() => onOpenAddMonthlyExpence()}>
+                  Aggiungi Estratto conto
+                </Button>
+              </Box>
 
-            <Box width="50%" textAlign="right" mr={20}>
-              <TableContainer w="50%" ml="auto">
-                <Table variant="simple" w="100%" textAlign="center">
-                  <Thead>
-                    <Tr>
-                      <Th textAlign="center">Mese di riferimento inseriti</Th>
-                    </Tr>
-                  </Thead>
-                  <Tbody>
-                    {rawRecords &&
-                      rawRecords.map((item: any) => (
-                        <Tr key={Math.floor(Math.random() * 10000)}>
-                          <Td textAlign="center">{item.month}</Td>
-                        </Tr>
-                      ))}
-                  </Tbody>
-                </Table>
-              </TableContainer>
-            </Box>
+              {/* Table on the right */}
+              <Box width="50%">
+                <TableContainer w="100%">
+                  <Table variant="simple">
+                    <Thead>
+                      <Tr>
+                        <Th textAlign="center">Ultimi 3 Mesi inseriti</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {rawRecords &&
+                        rawRecords.map((item: any, index: any) => (
+                          <Tr key={index}>
+                            <Td textAlign="center">{item.month}</Td>
+                          </Tr>
+                        ))}
+                    </Tbody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            </Flex>
           </Flex>
         </Box>
+        <Box padding={5} width="100%">
+          <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
+            Top Expense Categories
+          </h2>
+          <BarChart
+            width={window.innerWidth - 150}
+            height={400}
+            data={topExpenseCategories}
+            margin={{ top: 20, right: 30, left: 70, bottom: 200 }}
+          >
+            <CartesianGrid strokeDasharray="0" />
+            <XAxis
+              dataKey="category"
+              interval={0}
+              tick={{ fontSize: 15 }}
+              angle={-35}
+              textAnchor="end"
+            />
+            <YAxis />
+            <Tooltip
+              content={
+                <CustomTooltip
+                  active={undefined}
+                  payload={undefined}
+                  label={undefined}
+                />
+              }
+            />
+            <Bar
+              dataKey="total"
+              fill="#fa887f"
+              onClick={(data) => {
+                navigate(`/details/${data.category}`);
+              }}
+              cursor={"pointer"}
+            />
+          </BarChart>
+        </Box>
       </Box>
-      <Modal isOpen={isOpenAddMonthlyExpence} onClose={onCloseAddMonthlyExpence}>
+      <Modal
+        isOpen={isOpenAddMonthlyExpence}
+        onClose={onCloseAddMonthlyExpence}
+      >
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Aggiungi nuovo Estratto conto</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-          <Box mb={4}>
-            <Select placeholder="Seleziona il mese" size="md">
-              <option value="january">Gennaio</option>
-              <option value="february">Febbraio</option>
-              <option value="march">Marzo</option>
-              <option value="april">Aprile</option>
-              <option value="may">Maggio</option>
-              <option value="june">Giugno</option>
-              <option value="july">Luglio</option>
-              <option value="august">Agosto</option>
-              <option value="september">Settembre</option>
-              <option value="october">Ottobre</option>
-              <option value="november">Novembre</option>
-              <option value="december">Dicembre</option>
-            </Select>
-          </Box>
+            <Box mb={4}>
+              <Select placeholder="Seleziona il mese" size="md">
+                <option value="january">Gennaio</option>
+                <option value="february">Febbraio</option>
+                <option value="march">Marzo</option>
+                <option value="april">Aprile</option>
+                <option value="may">Maggio</option>
+                <option value="june">Giugno</option>
+                <option value="july">Luglio</option>
+                <option value="august">Agosto</option>
+                <option value="september">Settembre</option>
+                <option value="october">Ottobre</option>
+                <option value="november">Novembre</option>
+                <option value="december">Dicembre</option>
+              </Select>
+            </Box>
 
-          {/* File Picker */}
-          <Box>
-            <Input type="file" size="md" onChange={handleFileChange}/>
-          </Box>
+            {/* File Picker */}
+            <Box>
+              <Input type="file" size="md" onChange={handleFileChange} />
+            </Box>
           </ModalBody>
           <ModalFooter>
             <Button colorScheme="green" mr={3} onClick={handleUpload}>
