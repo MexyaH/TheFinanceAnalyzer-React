@@ -5,6 +5,7 @@ import HomePage from './components/homepage';
 import { ChakraProvider, extendTheme } from '@chakra-ui/react'
 import { Spinner } from '@chakra-ui/react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import Details from './components/details';
 
 const RoutesComponent = () => {
   const navigate = useNavigate();
@@ -29,6 +30,8 @@ const RoutesComponent = () => {
   const element = useRoutes([
     { path: '/login', element: <LoginPage /> },
     { path: '/', element: <HomePage /> },
+    { path: '/details/:category', element: <Details /> },
+
   ]);
 
   return isLogged ? element : <LoginPage />;
