@@ -13,7 +13,6 @@ import { auth } from '../firebase'; // import auth from your firebase configurat
 import UserContext from "../context/userContext";
 import { FaHome } from "react-icons/fa";
 import { FaUsersGear } from "react-icons/fa6";
-import { IoMdAdd } from "react-icons/io";
 import ModalVersion from "./ModalVersion";
 //import logo from "../assets/autotecnica_botti_logo_completo_nosfondo_bianco.png";
 interface NavbarProps {
@@ -57,14 +56,14 @@ const Navbar: React.FC<NavbarProps> = ({ }) => {
                 onClick={() => navigate('/')}
                 ml={4}
             />
-            <IconButton
+            {/*<IconButton
                 aria-label="form"
                 variant="outline"
                 colorScheme="red"
                 icon={<IoMdAdd />}
                 onClick={() => navigate('/addAssistance')}
                 ml={4}
-            />
+            />*/}
             {actualRole === 99 ? 
                 <IconButton
                     aria-label="home"

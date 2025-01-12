@@ -2,6 +2,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS # type: ignore
 import pandas as pd
 from google.cloud import firestore
+import re
+
 
 app = Flask(__name__)
 
@@ -39,6 +41,27 @@ def clean_uploaded_excel(file):
     df = df.dropna(subset=["Data", "Importo"])
     return df
 
+def refined_normalize_merchant_name_v2(details):
+    """
+    Refine merchant name extraction with an exception for specific terms.
+    """
+    # If "Ricarica Carte" is in the details, return it directly
+    if "Ricarica Carte" in details:
+        return "Ricarica Carte"
+
+    # Remove typical transaction prefixes or POS details
+    details = re.sub(r'Pagamento Su POS|Effettuato Il.*Ore|Carta N.*', '', details, flags=re.IGNORECASE)
+    details = re.sub(r'\s{2,}', ' ', details)  # Remove extra spaces
+    details = details.strip()
+
+    # Extract first meaningful word sequence for merchant name
+    match = re.search(r'[A-Za-z\s]+', details)
+    if match:
+        merchant_name = match.group(0).strip()
+        return merchant_name.title()
+
+    # Default fallback for unknown merchants
+    return "Unknown Merchant"
 
 def insert_into_firestore(df):
     """

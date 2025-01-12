@@ -23,10 +23,8 @@ const ModalVersion = () => {
                                 <Heading size="lg">Assistance</Heading>
                             </Flex>
                             <Box marginTop={10}>
-                                <Heading size="md" marginTop={5}>Versione</Heading>
-                                <Text>1.0.0</Text>
                                 <Heading size="md" marginTop={5}>Ultima Modifica</Heading>
-                                <Text>30/12/2024</Text>
+                                <Text>12/01/2025 v.0.1.1</Text>
                                 <Heading size="md" marginTop={5}>Sviluppatore</Heading>
                                 <Text>{developer}</Text>
                             </Box>

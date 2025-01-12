@@ -212,6 +212,8 @@ const Homepage: React.FC = () => {
     setOutcomePercentageChange(outcomePercentageChange);
     setSavingPercentageChange(savingsPercentageChange);
     setTopExpenseCategories(topCategories);
+    localStorage.setItem('Last3MExpences', JSON.stringify(lastThreeRecords))
+    localStorage.setItem('Prev3MExpences', JSON.stringify(previousThreeRecords))
     //console.log('Balance Income set to:', lastThreeTotals.totalIncome);
   };
 
@@ -446,8 +448,9 @@ const Homepage: React.FC = () => {
             <Bar
               dataKey="total"
               fill="#fa887f"
-              onClick={(data) => {
+              onClick={(data: any) => {
                 navigate(`/details/${data.category}`);
+                localStorage.setItem('records', 'value');
               }}
               cursor={"pointer"}
             />
