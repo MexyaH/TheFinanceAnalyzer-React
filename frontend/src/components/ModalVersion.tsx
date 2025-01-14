@@ -20,11 +20,11 @@ const ModalVersion = () => {
                             
                             <Flex alignItems="center" justifyContent="center">
                                 <Image src={logo} maxWidth="150px" mr={4} />
-                                <Heading size="lg">Assistance</Heading>
+                                <Heading size="lg">Home-Banking</Heading>
                             </Flex>
                             <Box marginTop={10}>
                                 <Heading size="md" marginTop={5}>Ultima Modifica</Heading>
-                                <Text>12/01/2025 v.0.1.1</Text>
+                                <Text>14/01/2025 v.0.1.2</Text>
                                 <Heading size="md" marginTop={5}>Sviluppatore</Heading>
                                 <Text>{developer}</Text>
                             </Box>
